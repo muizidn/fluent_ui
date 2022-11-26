@@ -28,6 +28,7 @@ class _TabViewPageState extends State<TabViewPage> with PageMixin {
       semanticLabel: 'Document #$index',
       icon: const FlutterLogo(),
       body: Container(
+        child: ListView.builder(itemCount: 100,itemBuilder: (context, index) => Container(padding: const EdgeInsets.all(10),child: Text("$index"),),),
         color:
             Colors.accentColors[Random().nextInt(Colors.accentColors.length)],
       ),
