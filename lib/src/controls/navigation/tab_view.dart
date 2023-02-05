@@ -226,8 +226,9 @@ class _TabViewState extends State<TabView> {
           itemCount: widget.tabs.length,
           animationDuration: const Duration(milliseconds: 100),
         );
-    scrollController.itemCount = widget.tabs.length;
-    scrollController.addListener(_handleScrollUpdate);
+    scrollController
+      ..itemCount = widget.tabs.length
+      ..addListener(_handleScrollUpdate);
   }
 
   void _handleScrollUpdate() {
@@ -242,7 +243,7 @@ class _TabViewState extends State<TabView> {
     }
     if (widget.currentIndex != oldWidget.currentIndex &&
         scrollController.hasClients) {
-      scrollController.scrollToItem(widget.currentIndex, center: false);
+      scrollController.scrollToItem(widget.currentIndex);
     }
   }
 
@@ -275,7 +276,7 @@ class _TabViewState extends State<TabView> {
 
       closeTimer?.cancel();
 
-      double tabWidth = preferredTabWidth;
+      var tabWidth = preferredTabWidth;
 
       final tabBox =
           tab._tabKey.currentContext?.findRenderObject() as RenderBox?;
@@ -298,7 +299,7 @@ class _TabViewState extends State<TabView> {
     int index,
     double preferredTabWidth,
   ) {
-    final Tab tab = widget.tabs[index];
+    final tab = widget.tabs[index];
     final tabWidget = _Tab(
       tab,
       key: ValueKey<int>(index),
@@ -410,20 +411,20 @@ class _TabViewState extends State<TabView> {
     final localizations = FluentLocalizations.of(context);
 
     final headerFooterTextStyle =
-        (theme.typography.bodyLarge ?? const TextStyle());
+        theme.typography.bodyLarge ?? const TextStyle();
 
     Widget tabBar = Column(children: [
       ScrollConfiguration(
         behavior: const _TabViewScrollBehavior(),
         child: Container(
-          margin: const EdgeInsets.only(top: 4.5),
-          padding: const EdgeInsets.only(left: 8),
+          margin: const EdgeInsetsDirectional.only(top: 4.5),
+          padding: const EdgeInsetsDirectional.only(start: 8),
           height: _kTileHeight,
           width: double.infinity,
           child: Row(children: [
             if (widget.header != null)
               Padding(
-                padding: const EdgeInsets.only(right: 12.0),
+                padding: const EdgeInsetsDirectional.only(end: 12.0),
                 child: DefaultTextStyle(
                   style: headerFooterTextStyle,
                   child: widget.header!,
@@ -486,10 +487,10 @@ class _TabViewState extends State<TabView> {
                 );
 
                 /// Whether the tab bar is scrollable
-                bool scrollable = preferredTabWidth * widget.tabs.length >
+                var scrollable = preferredTabWidth * widget.tabs.length >
                     width - (widget.showNewButton ? _kButtonWidth : 0);
 
-                final bool showScrollButtons = widget.showScrollButtons &&
+                final showScrollButtons = widget.showScrollButtons &&
                     scrollable &&
                     scrollController.hasClients;
 
@@ -572,7 +573,7 @@ class _TabViewState extends State<TabView> {
             ),
             if (widget.footer != null)
               Padding(
-                padding: const EdgeInsets.only(left: 12.0),
+                padding: const EdgeInsetsDirectional.only(start: 12.0),
                 child: DefaultTextStyle(
                   style: headerFooterTextStyle,
                   child: widget.footer!,
@@ -582,7 +583,12 @@ class _TabViewState extends State<TabView> {
         ),
       ),
       if (widget.tabs.isNotEmpty)
-        Expanded(child: IndexedStack(index: widget.currentIndex,children: widget.tabs.map((e) => e.body).toList(),)),
+        Expanded(
+          child: IndexedStack(
+            index: widget.currentIndex,
+            children: widget.tabs.map((tab) => tab.body).toList(),
+          ),
+        ),
     ]);
     if (widget.shortcutsEnabled) {
       void onClosePressed() {
@@ -640,7 +646,7 @@ class _TabViewState extends State<TabView> {
 
 /// Represents a single tab within a [TabView].
 class Tab {
-  final _tabKey = GlobalKey<__TabState>();
+  final _tabKey = GlobalKey<__TabState>(debugLabel: 'Tab key');
 
   /// Creates a tab.
   Tab({
@@ -706,7 +712,7 @@ class _Tab extends StatefulWidget {
   final TabWidthBehavior tabWidthBehavior;
 
   @override
-  __TabState createState() => __TabState();
+  State<_Tab> createState() => __TabState();
 }
 
 class __TabState extends State<_Tab>
@@ -739,12 +745,12 @@ class __TabState extends State<_Tab>
   Widget build(BuildContext context) {
     super.build(context);
     assert(debugCheckHasFluentTheme(context));
-    final ThemeData theme = FluentTheme.of(context);
+    final theme = FluentTheme.of(context);
     final res = theme.resources;
     final localizations = FluentLocalizations.of(context);
 
     // The text of the tab, if a [Text] widget is used
-    final String? text = () {
+    final text = () {
       if (widget.tab.text is Text) {
         return (widget.tab.text as Text).data ??
             (widget.tab.text as Text).textSpan?.toPlainText();
@@ -886,7 +892,6 @@ class __TabState extends State<_Tab>
         }
         if (widget.selected) {
           child = CustomPaint(
-            willChange: false,
             painter: _TabPainter(res.solidBackgroundFillColorTertiary),
             child: child,
           );

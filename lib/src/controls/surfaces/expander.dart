@@ -136,7 +136,7 @@ class ExpanderState extends State<Expander>
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
-    _isExpanded = PageStorage.of(context)?.readState(context) as bool? ??
+    _isExpanded = PageStorage.of(context).readState(context) as bool? ??
         widget.initiallyExpanded;
     if (_isExpanded == true) {
       _controller.value = 1;
@@ -165,7 +165,7 @@ class ExpanderState extends State<Expander>
       );
       _isExpanded = true;
     }
-    PageStorage.of(context)?.writeState(context, _isExpanded);
+    PageStorage.of(context).writeState(context, _isExpanded);
     widget.onStateChanged?.call(_isExpanded);
     if (mounted) setState(() {});
   }
@@ -188,6 +188,7 @@ class ExpanderState extends State<Expander>
       // HEADER
       HoverButton(
         onPressed: _handlePressed,
+        hitTestBehavior: HitTestBehavior.deferToChild,
         builder: (context, states) {
           return Container(
             height: widget.headerHeight,
@@ -235,7 +236,7 @@ class ExpanderState extends State<Expander>
                           ButtonThemeData.uncheckedInputColor(_theme, states),
                       borderRadius: BorderRadius.circular(4.0),
                     ),
-                    alignment: Alignment.center,
+                    alignment: AlignmentDirectional.center,
                     child: widget.icon ??
                         RotationTransition(
                           turns: Tween<double>(begin: 0, end: 0.5)

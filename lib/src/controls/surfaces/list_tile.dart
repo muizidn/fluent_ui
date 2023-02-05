@@ -185,7 +185,7 @@ class ListTile extends StatelessWidget {
       focusNode: focusNode,
       autofocus: autofocus,
       builder: (context, states) {
-        final Color tileColor = () {
+        final tileColor = () {
           if (this.tileColor != null) {
             return this.tileColor!.resolve(states);
           }
@@ -211,20 +211,17 @@ class ListTile extends StatelessWidget {
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (title != null)
                     DefaultTextStyle(
                       style: (theme.typography.body ?? const TextStyle())
                           .copyWith(fontSize: 16),
-                      overflow: TextOverflow.clip,
                       child: title!,
                     ),
                   if (subtitle != null)
                     DefaultTextStyle(
                       style: theme.typography.caption ?? const TextStyle(),
-                      overflow: TextOverflow.clip,
                       child: subtitle!,
                     ),
                 ],
@@ -244,8 +241,8 @@ class ListTile extends StatelessWidget {
               minWidth: 88.0,
             ),
             margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-            child: ContentManager(content: (context) {
-              final tileHeight = ContentSizeInfo.of(context).size.height;
+            child: Flyout(builder: (context) {
+              final tileHeight = Flyout.of(context).size.height;
               return Row(children: [
                 if (selectionMode == ListTileSelectionMode.none)
                   placeholder
@@ -293,7 +290,7 @@ class ListTile extends StatelessWidget {
                                       .defaultBrushFor(theme.brightness)
                                   : Colors.transparent,
                             ),
-                            margin: const EdgeInsets.only(right: 8.0),
+                            margin: const EdgeInsetsDirectional.only(end: 8.0),
                           ),
                         ),
                       ),

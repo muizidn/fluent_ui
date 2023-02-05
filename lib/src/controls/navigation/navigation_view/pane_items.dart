@@ -7,9 +7,11 @@ class NavigationPaneItem with Diagnosticable {
   /// See also:
   ///
   ///   * [PaneItem.build], which assigns
-  GlobalKey itemKey = GlobalKey();
+  final GlobalKey itemKey = GlobalKey();
 
-  NavigationPaneItem();
+  final Key? key;
+
+  NavigationPaneItem({this.key});
 }
 
 /// The item used by [NavigationView] to display the tiles.
@@ -37,6 +39,7 @@ class PaneItem extends NavigationPaneItem {
 
   /// Creates a pane item.
   PaneItem({
+    Key? key,
     required this.icon,
     required this.body,
     this.title,
@@ -48,7 +51,7 @@ class PaneItem extends NavigationPaneItem {
     this.tileColor,
     this.selectedTileColor,
     this.onTap,
-  });
+  }) : super(key: key);
 
   /// The title used by this item. If the display mode is top
   /// or compact, this is shown as a tooltip. If it's open, this
@@ -114,26 +117,22 @@ class PaneItem extends NavigationPaneItem {
     bool? autofocus,
   }) {
     final maybeBody = InheritedNavigationView.maybeOf(context);
-    final PaneDisplayMode mode = displayMode ??
+    final mode = displayMode ??
         maybeBody?.displayMode ??
         maybeBody?.pane?.displayMode ??
         PaneDisplayMode.minimal;
     assert(mode != PaneDisplayMode.auto);
 
     assert(debugCheckHasFluentTheme(context));
-    assert(debugCheckHasDirectionality(context));
 
-    final direction = Directionality.of(context);
+    final theme = NavigationPaneTheme.of(context);
+    final titleText = title?.getProperty<String>() ?? '';
 
-    final NavigationPaneThemeData theme = NavigationPaneTheme.of(context);
-    final String titleText = title?.getProperty<String>() ?? '';
+    final baseStyle = title?.getProperty<TextStyle>() ?? const TextStyle();
 
-    final TextStyle baseStyle =
-        title?.getProperty<TextStyle>() ?? const TextStyle();
-
-    final bool isTop = mode == PaneDisplayMode.top;
-    final bool isMinimal = mode == PaneDisplayMode.minimal;
-    final bool isCompact = mode == PaneDisplayMode.compact;
+    final isTop = mode == PaneDisplayMode.top;
+    final isMinimal = mode == PaneDisplayMode.minimal;
+    final isCompact = mode == PaneDisplayMode.compact;
 
     final onItemTapped = onPressed == null && onTap == null
         ? null
@@ -149,8 +148,8 @@ class PaneItem extends NavigationPaneItem {
       cursor: mouseCursor,
       focusEnabled: isMinimal ? (maybeBody?.minimalPaneOpen ?? false) : true,
       builder: (context, states) {
-        TextStyle textStyle = () {
-          TextStyle? style = !isTop
+        var textStyle = () {
+          var style = !isTop
               ? (selected
                   ? theme.selectedTextStyle?.resolve(states)
                   : theme.unselectedTextStyle?.resolve(states))
@@ -189,21 +188,25 @@ class PaneItem extends NavigationPaneItem {
               return Container(
                 key: itemKey,
                 height: 36.0,
-                alignment: Alignment.center,
+                alignment: AlignmentDirectional.center,
                 child: Padding(
                   padding: theme.iconPadding ?? EdgeInsets.zero,
                   child: IconTheme.merge(
                     data: iconThemeData,
                     child: Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: () {
                         if (infoBadge != null) {
                           return Stack(
-                            alignment: Alignment.center,
+                            alignment: AlignmentDirectional.center,
                             clipBehavior: Clip.none,
                             children: [
                               icon,
-                              Positioned(right: -8, top: -8, child: infoBadge!),
+                              PositionedDirectional(
+                                end: -8,
+                                top: -8,
+                                child: infoBadge!,
+                              ),
                             ],
                           );
                         }
@@ -259,8 +262,7 @@ class PaneItem extends NavigationPaneItem {
                 return Stack(key: itemKey, clipBehavior: Clip.none, children: [
                   result,
                   if (infoBadge != null)
-                    Positioned.directional(
-                      textDirection: direction,
+                    PositionedDirectional(
                       end: -3,
                       top: 3,
                       child: infoBadge!,
@@ -277,10 +279,10 @@ class PaneItem extends NavigationPaneItem {
           label: titleText.isEmpty ? null : titleText,
           selected: selected,
           child: Container(
-            margin: const EdgeInsets.only(right: 6.0, left: 6.0),
+            margin: const EdgeInsets.symmetric(horizontal: 6.0),
             decoration: BoxDecoration(
               color: () {
-                final ButtonState<Color?> tileColor = this.tileColor ??
+                final tileColor = this.tileColor ??
                     theme.tileColor ??
                     kDefaultTileColor(
                       context,
@@ -326,7 +328,7 @@ class PaneItem extends NavigationPaneItem {
       },
     );
 
-    final int? index = () {
+    final index = () {
       if (itemIndex != null) return itemIndex;
       if (maybeBody?.pane?.indicator != null) {
         return maybeBody!.pane!.effectiveIndexOf(this);
@@ -334,7 +336,8 @@ class PaneItem extends NavigationPaneItem {
     }();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
+      key: key,
+      padding: const EdgeInsetsDirectional.only(bottom: 4.0),
       child: () {
         // If there is an indicator and the item is an effective item
         if (maybeBody?.pane?.indicator != null &&
@@ -403,7 +406,11 @@ class PaneItem extends NavigationPaneItem {
 ///   * [PaneItemExpander], which creates hierhical navigation
 class PaneItemSeparator extends NavigationPaneItem {
   /// Creates an item separator.
-  PaneItemSeparator({this.color, this.thickness});
+  PaneItemSeparator({
+    super.key,
+    this.color,
+    this.thickness,
+  });
 
   /// The color used by the [Divider].
   final Color? color;
@@ -412,19 +419,22 @@ class PaneItemSeparator extends NavigationPaneItem {
   final double? thickness;
 
   Widget build(BuildContext context, Axis direction) {
-    return Divider(
-      key: itemKey,
-      direction: direction,
-      style: DividerThemeData(
-        thickness: thickness,
-        decoration: color != null ? BoxDecoration(color: color) : null,
-        verticalMargin: const EdgeInsets.symmetric(
-          horizontal: 8.0,
-          vertical: 10.0,
-        ),
-        horizontalMargin: const EdgeInsets.symmetric(
-          horizontal: 8.0,
-          vertical: 10.0,
+    return KeyedSubtree(
+      key: key,
+      child: Divider(
+        key: itemKey,
+        direction: direction,
+        style: DividerThemeData(
+          thickness: thickness,
+          decoration: color != null ? BoxDecoration(color: color) : null,
+          verticalMargin: const EdgeInsets.symmetric(
+            horizontal: 8.0,
+            vertical: 10.0,
+          ),
+          horizontalMargin: const EdgeInsets.symmetric(
+            horizontal: 8.0,
+            vertical: 10.0,
+          ),
         ),
       ),
     );
@@ -442,7 +452,7 @@ class PaneItemSeparator extends NavigationPaneItem {
 ///   * [PaneItemExpander], which creates hierhical navigation
 class PaneItemHeader extends NavigationPaneItem {
   /// Creates a pane header.
-  PaneItemHeader({required this.header});
+  PaneItemHeader({super.key, required this.header});
 
   /// The header. The default style is [NavigationPaneThemeData.itemHeaderTextStyle],
   /// but can be overriten by [Text.style].
@@ -454,22 +464,25 @@ class PaneItemHeader extends NavigationPaneItem {
     assert(debugCheckHasFluentTheme(context));
     final theme = NavigationPaneTheme.of(context);
     final view = InheritedNavigationView.of(context);
-    return Padding(
-      key: itemKey,
-      padding: (theme.iconPadding ?? EdgeInsets.zero).add(
-        view.displayMode == PaneDisplayMode.top
-            ? EdgeInsets.zero
-            : theme.headerPadding ?? EdgeInsets.zero,
-      ),
-      child: DefaultTextStyle(
-        style: theme.itemHeaderTextStyle ?? const TextStyle(),
-        softWrap: false,
-        maxLines: 1,
-        overflow: TextOverflow.fade,
-        textAlign: view.displayMode == PaneDisplayMode.top
-            ? TextAlign.center
-            : TextAlign.left,
-        child: header,
+    return KeyedSubtree(
+      key: key,
+      child: Padding(
+        key: itemKey,
+        padding: (theme.iconPadding ?? EdgeInsets.zero).add(
+          view.displayMode == PaneDisplayMode.top
+              ? EdgeInsets.zero
+              : theme.headerPadding ?? EdgeInsets.zero,
+        ),
+        child: DefaultTextStyle(
+          style: theme.itemHeaderTextStyle ?? const TextStyle(),
+          softWrap: false,
+          maxLines: 1,
+          overflow: TextOverflow.fade,
+          textAlign: view.displayMode == PaneDisplayMode.top
+              ? TextAlign.center
+              : TextAlign.left,
+          child: header,
+        ),
       ),
     );
   }
@@ -492,6 +505,7 @@ class PaneItemHeader extends NavigationPaneItem {
 ///   * [PaneItemExpander], which creates hierhical navigation
 class PaneItemAction extends PaneItem {
   PaneItemAction({
+    Key? key,
     required super.icon,
     super.body = const SizedBox.shrink(),
     required VoidCallback super.onTap,
@@ -503,7 +517,7 @@ class PaneItemAction extends PaneItem {
     super.selectedTileColor,
     super.tileColor,
     super.trailing,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(
@@ -550,6 +564,7 @@ class PaneItemExpander extends PaneItem {
   final _PaneItemExpanderKey expanderKey = _PaneItemExpanderKey();
 
   PaneItemExpander({
+    super.key,
     required super.icon,
     required this.items,
     required super.body,
@@ -581,15 +596,24 @@ class PaneItemExpander extends PaneItem {
     bool? autofocus,
     int? itemIndex,
   }) {
-    return _PaneItemExpander(
-      key: expanderKey,
-      item: this,
-      items: items,
-      displayMode: displayMode,
-      showTextOnTop: showTextOnTop,
-      selected: selected,
-      onPressed: onPressed,
-      onItemPressed: onItemPressed,
+    final maybeBody = InheritedNavigationView.maybeOf(context);
+    final mode = displayMode ??
+        maybeBody?.displayMode ??
+        maybeBody?.pane?.displayMode ??
+        PaneDisplayMode.minimal;
+
+    return KeyedSubtree(
+      key: key,
+      child: _PaneItemExpander(
+        key: expanderKey,
+        item: this,
+        items: items,
+        displayMode: mode,
+        showTextOnTop: showTextOnTop,
+        selected: selected,
+        onPressed: onPressed,
+        onItemPressed: onItemPressed,
+      ),
     );
   }
 }
@@ -608,7 +632,7 @@ class _PaneItemExpander extends StatefulWidget {
 
   final PaneItem item;
   final List<NavigationPaneItem> items;
-  final PaneDisplayMode? displayMode;
+  final PaneDisplayMode displayMode;
   final bool showTextOnTop;
   final bool selected;
   final VoidCallback? onPressed;
@@ -636,7 +660,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _open = PageStorage.of(context)?.readState(
+    _open = PageStorage.of(context).readState(
           context,
           identifier: 'paneItemExpanderOpen$index',
         ) as bool? ??
@@ -645,6 +669,13 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
     if (_open) {
       controller.value = 1;
     }
+
+    flyoutController.addListener(() {
+      if (_open && !flyoutController.isOpen ||
+          !_open && flyoutController.isOpen) {
+        toggleOpen(doFlyout: false);
+      }
+    });
   }
 
   @override
@@ -660,20 +691,73 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
     return body.pane?.effectiveIndexOf(widget.item) ?? 0;
   }
 
-  void toggleOpen() {
+  void toggleOpen({bool doFlyout = true}) {
     setState(() => _open = !_open);
 
-    PageStorage.of(context)?.writeState(
+    PageStorage.of(context).writeState(
       context,
       _open,
       identifier: 'paneItemExpanderOpen$index',
     );
-    if (useFlyout) {
-      flyoutController.toggle();
-    }
     if (_open) {
+      if (useFlyout && doFlyout) {
+        final body = InheritedNavigationView.of(context);
+        final displayMode = body.displayMode;
+        final navigationTheme = NavigationPaneTheme.of(context);
+
+        flyoutController.showFlyout(
+          placementMode: displayMode == PaneDisplayMode.compact
+              ? FlyoutPlacementMode.right
+              : FlyoutPlacementMode.bottomCenter,
+          forceAvailableSpace: true,
+          builder: (context) {
+            return MenuFlyout(
+              items: widget.items.map<MenuFlyoutItemBase>((item) {
+                if (item is PaneItem) {
+                  return _PaneItemExpanderMenuItem(
+                    item: item,
+                    onPressed: () {
+                      widget.onItemPressed?.call(item);
+                      Navigator.pop(context);
+                    },
+                    isSelected: body.pane!.isSelected(item),
+                  );
+                } else if (item is PaneItemSeparator) {
+                  return const MenuFlyoutSeparator();
+                } else if (item is PaneItemHeader) {
+                  return MenuFlyoutItemBuilder(builder: (context) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0,
+                        vertical: 8.0,
+                      ),
+                      margin: const EdgeInsetsDirectional.only(bottom: 4.0),
+                      child: DefaultTextStyle(
+                        style: navigationTheme.itemHeaderTextStyle ??
+                            const TextStyle(),
+                        softWrap: false,
+                        maxLines: 1,
+                        overflow: TextOverflow.fade,
+                        child: item.header,
+                      ),
+                    );
+                  });
+                } else {
+                  throw UnsupportedError(
+                    '${item.runtimeType} is not a supported item type',
+                  );
+                }
+              }).toList(),
+            );
+          },
+        );
+      }
+
       controller.forward();
     } else {
+      if (useFlyout && doFlyout && flyoutController.isOpen) {
+        Navigator.of(context).pop();
+      }
       controller.reverse();
     }
   }
@@ -683,9 +767,8 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
     assert(debugCheckHasFluentTheme(context));
     final theme = FluentTheme.of(context);
     final body = InheritedNavigationView.of(context);
-    final navigationTheme = NavigationPaneTheme.of(context);
 
-    _open = PageStorage.of(context)?.readState(
+    _open = PageStorage.of(context).readState(
           context,
           identifier: 'paneItemExpanderOpen$index',
         ) as bool? ??
@@ -694,7 +777,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
     // Indexes
     // Ensure, if the child item is not visible, this is shown as the selected
     // item
-    int realIndex = body.pane!.effectiveIndexOf(widget.item);
+    var realIndex = body.pane!.effectiveIndexOf(widget.item);
     final childrenIndexes = body.pane!.effectiveItems.where((item) {
       return widget.items.contains(item);
     }).map((item) => body.pane!.effectiveIndexOf(item));
@@ -704,7 +787,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
 
     // the item is this item with changes on the trailing widget: the padding
     // and rotation animation
-    final Widget item = widget.item
+    final item = widget.item
         .copyWith(
       trailing: GestureDetector(
         onTap: toggleOpen,
@@ -791,58 +874,8 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
         ]);
       case PaneDisplayMode.top:
       case PaneDisplayMode.compact:
-        return Flyout(
+        return FlyoutTarget(
           controller: flyoutController,
-          position: displayMode == PaneDisplayMode.compact
-              ? FlyoutPosition.side
-              : FlyoutPosition.below,
-          placement: displayMode == PaneDisplayMode.compact
-              ? FlyoutPlacement.end
-              : FlyoutPlacement.center,
-          onClose: toggleOpen,
-          content: (context) {
-            return MenuFlyout(
-              items: widget.items.map<MenuFlyoutItemInterface>((item) {
-                if (item is PaneItem) {
-                  return _PaneItemExpanderMenuItem(
-                    item: item,
-                    onPressed: () {
-                      widget.onItemPressed?.call(item);
-                      Navigator.pop(context);
-                    },
-                    isSelected: body.pane!.isSelected(item),
-                  );
-                } else if (item is PaneItemSeparator) {
-                  return const MenuFlyoutSeparator();
-                } else if (item is PaneItemHeader) {
-                  return MenuFlyoutItemBuilder(builder: (context) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10.0,
-                        vertical: 8.0,
-                      ),
-                      margin: const EdgeInsets.only(bottom: 4.0),
-                      child: DefaultTextStyle(
-                        style: navigationTheme.itemHeaderTextStyle ??
-                            const TextStyle(),
-                        softWrap: false,
-                        maxLines: 1,
-                        overflow: TextOverflow.fade,
-                        // textAlign: view.displayMode == PaneDisplayMode.top
-                        //     ? TextAlign.center
-                        //     : TextAlign.left,
-                        child: item.header,
-                      ),
-                    );
-                  });
-                } else {
-                  throw UnsupportedError(
-                    '${item.runtimeType} is not a supported item type',
-                  );
-                }
-              }).toList(),
-            );
-          },
           child: item,
         );
       default:
@@ -851,7 +884,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
   }
 }
 
-class _PaneItemExpanderMenuItem extends MenuFlyoutItemInterface {
+class _PaneItemExpanderMenuItem extends MenuFlyoutItemBase {
   const _PaneItemExpanderMenuItem({
     Key? key,
     required this.item,
@@ -866,7 +899,7 @@ class _PaneItemExpanderMenuItem extends MenuFlyoutItemInterface {
   @override
   Widget build(BuildContext context) {
     final theme = FluentTheme.of(context);
-    final size = ContentSizeInfo.of(context).size;
+    final size = Flyout.of(context).size;
     return Container(
       width: size.isEmpty ? null : size.width,
       padding: MenuFlyout.itemsPadding,
@@ -878,7 +911,7 @@ class _PaneItemExpanderMenuItem extends MenuFlyoutItemInterface {
               horizontal: 10.0,
               vertical: 8.0,
             ),
-            margin: const EdgeInsets.only(bottom: 4.0),
+            margin: const EdgeInsetsDirectional.only(bottom: 4.0),
             decoration: BoxDecoration(
               color: ButtonThemeData.uncheckedInputColor(
                 theme,
