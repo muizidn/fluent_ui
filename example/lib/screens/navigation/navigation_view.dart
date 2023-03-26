@@ -17,13 +17,19 @@ class _NavigationViewPageState extends State<NavigationViewPage>
   int topIndex = 0;
 
   PaneDisplayMode displayMode = PaneDisplayMode.open;
-  String pageTransition = 'default';
+  String pageTransition = 'Default';
   static const List<String> pageTransitions = [
-    'default',
-    'entrance',
-    'drill in',
-    'horizontal',
+    'Default',
+    'Entrance',
+    'Drill in',
+    'Horizontal',
   ];
+
+  String indicator = 'Sticky';
+  static final Map<String, Widget> indicators = {
+    'Sticky': const StickyNavigationIndicator(),
+    'End': const EndNavigationIndicator(),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +82,12 @@ class _NavigationViewPageState extends State<NavigationViewPage>
             value: displayMode,
             items: ([...PaneDisplayMode.values]..remove(PaneDisplayMode.auto))
                 .map((mode) {
-              return ComboBoxItem(child: Text(mode.name), value: mode);
+              return ComboBoxItem(
+                child: Text(
+                  mode.name.uppercaseFirst(),
+                ),
+                value: mode,
+              );
             }).toList(),
             onChanged: (mode) => setState(
               () => this.displayMode = mode ?? displayMode,
@@ -95,6 +106,18 @@ class _NavigationViewPageState extends State<NavigationViewPage>
             ),
           ),
         ),
+        InfoLabel(
+          label: 'Indicator',
+          child: ComboBox<String>(
+            items: indicators.keys
+                .map((e) => ComboBoxItem(child: Text(e), value: e))
+                .toList(),
+            value: indicator,
+            onChanged: (i) => setState(
+              () => indicator = i ?? indicator,
+            ),
+          ),
+        ),
       ]),
       subtitle(content: Text(title)),
       description(content: Text(desc)),
@@ -109,12 +132,15 @@ class _NavigationViewPageState extends State<NavigationViewPage>
               selected: topIndex,
               onChanged: (index) => setState(() => topIndex = index),
               displayMode: displayMode,
+              indicator: indicators[indicator],
+              header: const Text('Pane Header'),
               items: [
                 PaneItem(
                   icon: const Icon(FluentIcons.home),
                   title: const Text('Home'),
                   body: const _NavigationBodyItem(),
                 ),
+                PaneItemSeparator(),
                 PaneItem(
                   icon: const Icon(FluentIcons.issue_tracking),
                   title: const Text('Track orders'),
@@ -130,6 +156,12 @@ class _NavigationViewPageState extends State<NavigationViewPage>
                       'number, icon, or a simple dot.',
                     ),
                   ),
+                ),
+                PaneItem(
+                  icon: const Icon(FluentIcons.disable_updates),
+                  title: const Text('Disabled Item'),
+                  body: const _NavigationBodyItem(),
+                  enabled: false,
                 ),
                 PaneItemExpander(
                   icon: const Icon(FluentIcons.account_management),
@@ -169,21 +201,21 @@ class _NavigationViewPageState extends State<NavigationViewPage>
                 ),
               ],
             ),
-            transitionBuilder: pageTransition == 'default'
+            transitionBuilder: pageTransition == 'Default'
                 ? null
                 : (child, animation) {
                     switch (pageTransition) {
-                      case 'entrance':
+                      case 'Entrance':
                         return EntrancePageTransition(
                           child: child,
                           animation: animation,
                         );
-                      case 'drill in':
+                      case 'Drill in':
                         return DrillInPageTransition(
                           child: child,
                           animation: animation,
                         );
-                      case 'horizontal':
+                      case 'Horizontal':
                         return HorizontalSlidePageTransition(
                           child: child,
                           animation: animation,

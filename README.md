@@ -45,8 +45,8 @@
 - [Motivation](#motivation)
 - [Installation](#installation)
   - [Badge](#badge)
-- [Accent color](#accent-color)
-- [Localization](#Localization)
+  - [Accent color](#accent-color)
+- [Localization](#localization)
 - [Contribution](#contribution)
   - [Contributing new localizations](#contributing-new-localizations)
   - [Acknowledgements](#acknowledgements)
@@ -68,7 +68,7 @@ Add the package to your dependencies:
 
 ```yaml
 dependencies:
-  fluent_ui: ^4.0.0
+  fluent_ui: ^4.4.0
 ```
 
 <p align="center">OR</p>
@@ -113,7 +113,7 @@ Common controls use an accent color to convey state information. [Learn more](ht
 By default, the accent color is `Colors.blue`. However, you can also customize your app's accent color to reflect your brand:
 
 ```dart
-ThemeData(
+FluentThemeData(
   accentColor: Colors.blue,
 )
 ```
@@ -123,7 +123,7 @@ To use the system's accent color, you can use the plugin [system_theme](https://
 ```dart
 import 'package:system_theme/system_theme.dart';
 
-ThemeData(
+FluentThemeData(
   accentColor: SystemTheme.accentColor.accent.toAccentColor(),
 )
 ```
@@ -140,6 +140,7 @@ FluentUI widgets currently supports out-of-the-box an wide number of languages, 
 - English
 - French (@WinXaito)
 - German (@larsb24)
+- Greek (@pana-g)
 - Hebrew (@yehudakremer)
 - Hindi (@alexmercerind)
 - Hungarian (@RedyAu)
@@ -154,6 +155,7 @@ FluentUI widgets currently supports out-of-the-box an wide number of languages, 
 - Russian (@raitonoberu)
 - Simplified Chinese (@zacksleo, @rk0cc)
 - Traditional Chinese (@zacksleo, @rk0cc)
+- Thai (@lines-of-codes)
 - Turkish (@timurturbil)
 - Spanish (@henry2man)
 - Ukranian (@vadimbarda)

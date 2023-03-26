@@ -65,7 +65,6 @@ class TabView extends StatefulWidget {
     this.shortcutsEnabled = true,
     this.onReorder,
     this.showScrollButtons = true,
-    this.wheelScroll = false,
     this.scrollController,
     this.minTabWidth = _kMinTileWidth,
     this.maxTabWidth = _kMaxTileWidth,
@@ -74,6 +73,8 @@ class TabView extends StatefulWidget {
     this.header,
     this.footer,
     this.closeDelayDuration = const Duration(milliseconds: 400),
+    @Deprecated('This property is no longer used and will be removed in the next major release.')
+        this.wheelScroll = false,
   }) : super(key: key);
 
   /// The index of the tab to be displayed
@@ -127,11 +128,8 @@ class TabView extends StatefulWidget {
   /// If null, a [ScrollPosController] is created internally.
   final ScrollPosController? scrollController;
 
-  // TODO: remove this property when https://github.com/flutter/flutter/issues/75180
-  // is fixed
-  /// Indicate if the mouse wheel should scroll the TabView
-  ///
-  /// Defaults to `false`.
+  @Deprecated('This property is no longer used and will be removed in the'
+      ' next major release.')
   final bool wheelScroll;
 
   /// Indicates the close button visibility mode
@@ -238,7 +236,7 @@ class _TabViewState extends State<TabView> {
   @override
   void didUpdateWidget(TabView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.tabs.length != oldWidget.tabs.length) {
+    if (widget.tabs.length != scrollController.itemCount) {
       scrollController.itemCount = widget.tabs.length;
     }
     if (widget.currentIndex != oldWidget.currentIndex &&
@@ -444,24 +442,25 @@ class _TabViewState extends State<TabView> {
                         .clamp(widget.minTabWidth, widget.maxTabWidth);
 
                 final Widget listView = Listener(
-                  onPointerSignal: widget.wheelScroll
-                      ? (PointerSignalEvent e) {
-                          if (e is PointerScrollEvent &&
-                              scrollController.hasClients) {
-                            if (e.scrollDelta.dy > 0) {
-                              scrollController.forward(
-                                align: false,
-                                animate: false,
-                              );
-                            } else {
-                              scrollController.backward(
-                                align: false,
-                                animate: false,
-                              );
-                            }
-                          }
+                  onPointerSignal: (PointerSignalEvent e) {
+                    if (e is PointerScrollEvent &&
+                        scrollController.hasClients) {
+                      GestureBinding.instance.pointerSignalResolver.register(e,
+                          (PointerSignalEvent event) {
+                        if (e.scrollDelta.dy > 0) {
+                          scrollController.forward(
+                            align: false,
+                            animate: false,
+                          );
+                        } else {
+                          scrollController.backward(
+                            align: false,
+                            animate: false,
+                          );
                         }
-                      : null,
+                      });
+                    }
+                  },
                   child: Localizations.override(
                     context: context,
                     delegates: const [
@@ -507,9 +506,9 @@ class _TabViewState extends State<TabView> {
                       !scrollController.canBackward
                           ? () {
                               if (direction == TextDirection.ltr) {
-                                scrollController.backward();
+                                scrollController.backward(align: false);
                               } else {
-                                scrollController.forward();
+                                scrollController.forward(align: false);
                               }
                             }
                           : null,
@@ -531,9 +530,9 @@ class _TabViewState extends State<TabView> {
                       !scrollController.canForward
                           ? () {
                               if (direction == TextDirection.ltr) {
-                                scrollController.forward();
+                                scrollController.forward(align: false);
                               } else {
-                                scrollController.backward();
+                                scrollController.backward(align: false);
                               }
                             }
                           : null,
@@ -584,9 +583,12 @@ class _TabViewState extends State<TabView> {
       ),
       if (widget.tabs.isNotEmpty)
         Expanded(
-          child: IndexedStack(
-            index: widget.currentIndex,
-            children: widget.tabs.map((tab) => tab.body).toList(),
+          child: Focus(
+            autofocus: true,
+            child: _TabBody(
+              index: widget.currentIndex,
+              tabs: widget.tabs,
+            ),
           ),
         ),
     ]);
@@ -595,17 +597,35 @@ class _TabViewState extends State<TabView> {
         close(widget.currentIndex);
       }
 
+      // For more info, refer to [SingleActivator] docs
+      var ctrl = true;
+      var meta = false;
+      if (!kIsWeb &&
+          [TargetPlatform.iOS, TargetPlatform.macOS]
+              .contains(defaultTargetPlatform)) {
+        ctrl = false;
+        meta = true;
+      }
+
       return FocusScope(
         autofocus: true,
         child: CallbackShortcuts(
           bindings: {
-            const SingleActivator(LogicalKeyboardKey.f4, control: true):
-                onClosePressed,
-            const SingleActivator(LogicalKeyboardKey.keyW, control: true):
-                onClosePressed,
-            const SingleActivator(LogicalKeyboardKey.keyT, control: true): () {
-              widget.onNewPressed?.call();
-            },
+            SingleActivator(
+              LogicalKeyboardKey.f4,
+              control: ctrl,
+              meta: meta,
+            ): onClosePressed,
+            SingleActivator(
+              LogicalKeyboardKey.keyW,
+              control: ctrl,
+              meta: meta,
+            ): onClosePressed,
+            SingleActivator(
+              LogicalKeyboardKey.keyT,
+              control: ctrl,
+              meta: meta,
+            ): () => widget.onNewPressed?.call(),
             ...Map.fromIterable(
               List<int>.generate(9, (index) => index),
               key: (i) {
@@ -620,7 +640,7 @@ class _TabViewState extends State<TabView> {
                   LogicalKeyboardKey.digit8,
                   LogicalKeyboardKey.digit9,
                 ];
-                return SingleActivator(digits[i], control: true);
+                return SingleActivator(digits[i], control: ctrl, meta: meta);
               },
               value: (index) {
                 return () {
@@ -641,6 +661,68 @@ class _TabViewState extends State<TabView> {
       );
     }
     return tabBar;
+  }
+}
+
+class _TabBody extends StatefulWidget {
+  final int index;
+  final List<Tab> tabs;
+
+  const _TabBody({
+    Key? key,
+    required this.index,
+    required this.tabs,
+  }) : super(key: key);
+
+  @override
+  State<_TabBody> createState() => __TabBodyState();
+}
+
+class __TabBodyState extends State<_TabBody> {
+  final _pageKey = GlobalKey<State<PageView>>();
+  PageController? _pageController;
+
+  PageController get pageController => _pageController!;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    MediaQuery.of(context);
+
+    _pageController ??= PageController(initialPage: widget.index);
+  }
+
+  @override
+  void didUpdateWidget(_TabBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (pageController.hasClients) {
+      if (oldWidget.index != widget.index ||
+          pageController.page != widget.index) {
+        pageController.jumpToPage(widget.index);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView.builder(
+      key: _pageKey,
+      physics: const NeverScrollableScrollPhysics(),
+      controller: pageController,
+      itemCount: widget.tabs.length,
+      itemBuilder: (context, index) {
+        final isSelected = widget.index == index;
+        final item = widget.tabs[index];
+
+        return ExcludeFocus(
+          key: ValueKey(index),
+          excluding: !isSelected,
+          child: FocusTraversalGroup(
+            child: item.body,
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -758,24 +840,46 @@ class __TabState extends State<_Tab>
         return (widget.tab.text as RichText).text.toPlainText();
       }
     }();
+
     return HoverButton(
       key: widget.tab.key,
       semanticLabel: widget.tab.semanticLabel ?? text,
       onPressed: widget.onPressed,
       builder: (context, states) {
-        final foregroundColor = ButtonState.resolveWith((states) {
-          if (widget.selected) {
-            return res.textFillColorPrimary;
-          } else if (states.isPressing) {
-            return res.textFillColorTertiary;
-          } else if (states.isHovering) {
+        /// https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/TreeView/TreeView_themeresources.xaml#L19-L26
+        final foregroundColor = ButtonState.resolveWith<Color>((states) {
+          if (states.isPressing) {
             return res.textFillColorSecondary;
+          } else if (states.isHovering) {
+            return res.textFillColorPrimary;
           } else if (states.isDisabled) {
             return res.textFillColorDisabled;
           } else {
-            return res.textFillColorSecondary;
+            return widget.selected
+                ? res.textFillColorPrimary
+                : res.textFillColorSecondary;
           }
         }).resolve(states);
+
+        /// https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/TreeView/TreeView_themeresources.xaml#L10-L17
+        final backgroundColor = ButtonState.resolveWith<Color>((states) {
+          if (states.isPressing) {
+            return widget.selected
+                ? res.subtleFillColorSecondary
+                : res.subtleFillColorTertiary;
+          } else if (states.isHovering) {
+            return widget.selected
+                ? res.subtleFillColorTertiary
+                : res.subtleFillColorSecondary;
+          } else if (states.isDisabled) {
+            return res.subtleFillColorDisabled;
+          } else {
+            return widget.selected
+                ? res.subtleFillColorSecondary
+                : res.subtleFillColorTransparent;
+          }
+        }).resolve(states);
+
         const borderRadius = BorderRadius.vertical(top: Radius.circular(6));
         Widget child = FocusBorder(
           focused: states.isFocused,
@@ -786,8 +890,11 @@ class __TabState extends State<_Tab>
             height: _kTileHeight,
             constraints:
                 widget.tabWidthBehavior == TabWidthBehavior.sizeToContent
-                    ? null
-                    : const BoxConstraints(maxWidth: _kMaxTileWidth),
+                    ? const BoxConstraints(minHeight: 28.0)
+                    : const BoxConstraints(
+                        maxWidth: _kMaxTileWidth,
+                        minHeight: 28.0,
+                      ),
             padding: const EdgeInsetsDirectional.only(
               start: 8,
               top: 3,
@@ -796,13 +903,9 @@ class __TabState extends State<_Tab>
             ),
             decoration: BoxDecoration(
               borderRadius: borderRadius,
-              color: widget.selected
-                  ? null
-                  : ButtonThemeData.uncheckedInputColor(
-                      theme,
-                      states,
-                      transparentWhenNone: true,
-                    ),
+
+              // if selected, the background is painted by _TabPainter
+              color: widget.selected ? null : backgroundColor,
             ),
             child: () {
               final result = ClipRect(
@@ -892,7 +995,7 @@ class __TabState extends State<_Tab>
         }
         if (widget.selected) {
           child = CustomPaint(
-            painter: _TabPainter(res.solidBackgroundFillColorTertiary),
+            painter: _TabPainter(backgroundColor),
             child: child,
           );
         }

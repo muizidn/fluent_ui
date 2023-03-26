@@ -85,6 +85,7 @@ class FluentApp extends StatefulWidget {
         routeInformationParser = null,
         routerDelegate = null,
         backButtonDispatcher = null,
+        routerConfig = null,
         super(key: key);
 
   /// Creates a [FluentApp] that uses the [Router] instead of a [Navigator].
@@ -94,13 +95,14 @@ class FluentApp extends StatefulWidget {
     this.darkTheme,
     this.themeMode,
     this.routeInformationProvider,
-    required this.routeInformationParser,
-    required this.routerDelegate,
+    this.routeInformationParser,
+    this.routerDelegate,
     BackButtonDispatcher? backButtonDispatcher,
+    this.routerConfig,
     this.builder,
     this.title = '',
     this.onGenerateTitle,
-    required Color this.color,
+    this.color,
     this.locale,
     this.localizationsDelegates,
     this.localeListResolutionCallback,
@@ -116,8 +118,8 @@ class FluentApp extends StatefulWidget {
     this.restorationScopeId,
     this.scrollBehavior = const FluentScrollBehavior(),
     this.useInheritedMediaQuery = false,
-  })  : assert(routeInformationParser != null && routerDelegate != null,
-            'The routeInformationParser and routerDelegate cannot be null.'),
+  })  : assert(routeInformationParser != null && routerDelegate != null ||
+            routerConfig != null),
         assert(supportedLocales.isNotEmpty),
         navigatorObservers = null,
         backButtonDispatcher =
@@ -134,25 +136,25 @@ class FluentApp extends StatefulWidget {
   /// Default visual properties, like colors fonts and shapes, for this app's
   /// fluent widgets.
   ///
-  /// A second [darkTheme] [ThemeData] value, which is used to provide a dark
+  /// A second [darkTheme] [FluentThemeData] value, which is used to provide a dark
   /// version of the user interface can also be specified. [themeMode] will
   /// control which theme will be used if a [darkTheme] is provided.
   ///
-  /// The default value of this property is the value of `ThemeData(brightness: Brightness.light)`.
-  final ThemeData? theme;
+  /// The default value of this property is the value of `FluentThemeData(brightness: Brightness.light)`.
+  final FluentThemeData? theme;
 
-  /// The [ThemeData] to use when a 'dark mode' is requested by the system.
+  /// The [FluentThemeData] to use when a 'dark mode' is requested by the system.
   ///
   /// Some host platforms allow the users to select a system-wide 'dark mode',
   /// or the application may want to offer the user the ability to choose a
   /// dark theme just for this application. This is theme that will be used for
   /// such cases. [themeMode] will control which theme will be used.
   ///
-  /// This theme should have a [ThemeData.brightness] set to [Brightness.dark].
+  /// This theme should have a [FluentThemeData.brightness] set to [Brightness.dark].
   ///
   /// Uses [theme] instead when null. Defaults to the value of
-  /// [ThemeData(brightness: Brightness.light)] when both [darkTheme] and [theme] are null.
-  final ThemeData? darkTheme;
+  /// [FluentThemeData(brightness: Brightness.light)] when both [darkTheme] and [theme] are null.
+  final FluentThemeData? darkTheme;
 
   /// Determines which theme will be used by the application if both [theme]
   /// and [darkTheme] are provided.
@@ -215,6 +217,9 @@ class FluentApp extends StatefulWidget {
 
   /// {@macro flutter.widgets.widgetsApp.backButtonDispatcher}
   final BackButtonDispatcher? backButtonDispatcher;
+
+  /// {@macro flutter.widgets.widgetsApp.routerConfig}
+  final RouterConfig<Object>? routerConfig;
 
   /// {@macro flutter.widgets.widgetsApp.builder}
   ///
@@ -379,7 +384,8 @@ class _FluentAppState extends State<FluentApp> {
     yield GlobalWidgetsLocalizations.delegate;
   }
 
-  bool get _usesRouter => widget.routerDelegate != null;
+  bool get _usesRouter =>
+      widget.routerDelegate != null || widget.routerConfig != null;
 
   @override
   Widget build(BuildContext context) {
@@ -393,18 +399,18 @@ class _FluentAppState extends State<FluentApp> {
     );
   }
 
-  ThemeData theme(BuildContext context) {
+  FluentThemeData theme(BuildContext context) {
     final mode = widget.themeMode ?? ThemeMode.system;
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
     final usedarkStyle = mode == ThemeMode.dark ||
         (mode == ThemeMode.system && platformBrightness == Brightness.dark);
 
     final data = () {
-      late ThemeData result;
+      late FluentThemeData result;
       if (usedarkStyle) {
-        result = widget.darkTheme ?? widget.theme ?? ThemeData();
+        result = widget.darkTheme ?? widget.theme ?? FluentThemeData();
       } else {
-        result = widget.theme ?? ThemeData();
+        result = widget.theme ?? FluentThemeData();
       }
       return result;
     }();
@@ -459,8 +465,9 @@ class _FluentAppState extends State<FluentApp> {
       return WidgetsApp.router(
         key: GlobalObjectKey(this),
         routeInformationProvider: widget.routeInformationProvider,
-        routeInformationParser: widget.routeInformationParser!,
-        routerDelegate: widget.routerDelegate!,
+        routeInformationParser: widget.routeInformationParser,
+        routerDelegate: widget.routerDelegate,
+        routerConfig: widget.routerConfig,
         backButtonDispatcher: widget.backButtonDispatcher,
         builder: _builder,
         title: widget.title,

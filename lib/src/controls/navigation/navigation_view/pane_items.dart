@@ -51,6 +51,7 @@ class PaneItem extends NavigationPaneItem {
     this.tileColor,
     this.selectedTileColor,
     this.onTap,
+    this.enabled = true,
   }) : super(key: key);
 
   /// The title used by this item. If the display mode is top
@@ -105,6 +106,18 @@ class PaneItem extends NavigationPaneItem {
   /// Called when the item is tapped, regardless of selected or not
   final VoidCallback? onTap;
 
+  /// Whether this pane item is disabled.
+  ///
+  /// A pane item can be disabled for many reasons, such as a page not being available
+  /// in the current moment.
+  ///
+  /// If true, [onTap] is ignored.
+  ///
+  /// See also:
+  ///
+  ///  * [HoverButton.forceEnabled]
+  final bool enabled;
+
   /// Used to construct the pane items all around [NavigationView]. You can
   /// customize how the pane items should look like by overriding this method
   Widget build(
@@ -134,7 +147,7 @@ class PaneItem extends NavigationPaneItem {
     final isMinimal = mode == PaneDisplayMode.minimal;
     final isCompact = mode == PaneDisplayMode.compact;
 
-    final onItemTapped = onPressed == null && onTap == null
+    final onItemTapped = (onPressed == null && onTap == null) || !enabled
         ? null
         : () {
             onPressed?.call();
@@ -147,6 +160,7 @@ class PaneItem extends NavigationPaneItem {
       onPressed: onItemTapped,
       cursor: mouseCursor,
       focusEnabled: isMinimal ? (maybeBody?.minimalPaneOpen ?? false) : true,
+      forceEnabled: enabled,
       builder: (context, states) {
         var textStyle = () {
           var style = !isTop
@@ -187,7 +201,9 @@ class PaneItem extends NavigationPaneItem {
             case PaneDisplayMode.compact:
               return Container(
                 key: itemKey,
-                height: 36.0,
+                constraints: const BoxConstraints(
+                  minHeight: kPaneItemMinHeight,
+                ),
                 alignment: AlignmentDirectional.center,
                 child: Padding(
                   padding: theme.iconPadding ?? EdgeInsets.zero,
@@ -218,9 +234,11 @@ class PaneItem extends NavigationPaneItem {
               );
             case PaneDisplayMode.minimal:
             case PaneDisplayMode.open:
-              return SizedBox(
+              return ConstrainedBox(
                 key: itemKey,
-                height: 36.0,
+                constraints: const BoxConstraints(
+                  minHeight: kPaneItemMinHeight,
+                ),
                 child: Row(children: [
                   Padding(
                     padding: theme.iconPadding ?? EdgeInsets.zero,
@@ -284,10 +302,7 @@ class PaneItem extends NavigationPaneItem {
               color: () {
                 final tileColor = this.tileColor ??
                     theme.tileColor ??
-                    kDefaultTileColor(
-                      context,
-                      isTop,
-                    );
+                    kDefaultPaneItemColor(context, isTop);
                 final newStates = states.toSet()..remove(ButtonStates.disabled);
                 if (selected && selectedTileColor != null) {
                   return selectedTileColor!.resolve(newStates);
@@ -464,10 +479,12 @@ class PaneItemHeader extends NavigationPaneItem {
     assert(debugCheckHasFluentTheme(context));
     final theme = NavigationPaneTheme.of(context);
     final view = InheritedNavigationView.of(context);
+
     return KeyedSubtree(
       key: key,
-      child: Padding(
+      child: Container(
         key: itemKey,
+        constraints: const BoxConstraints(minHeight: kPaneItemHeaderMinHeight),
         padding: (theme.iconPadding ?? EdgeInsets.zero).add(
           view.displayMode == PaneDisplayMode.top
               ? EdgeInsets.zero

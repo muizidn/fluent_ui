@@ -444,6 +444,7 @@ typedef FlyoutTransitionBuilder = Widget Function(
   Widget child,
 );
 
+/// Controls the state of a flyout
 class FlyoutController with ChangeNotifier {
   _FlyoutTargetState? _attachState;
   bool _open = false;
@@ -456,6 +457,7 @@ class FlyoutController with ChangeNotifier {
   /// If already attached, the current state is detached and replaced by the
   /// provided [state]
   void _attach(_FlyoutTargetState state) {
+    if (_attachState == state) return;
     if (isAttached) _detach();
 
     _attachState = state;
@@ -484,17 +486,23 @@ class FlyoutController with ChangeNotifier {
   /// [builder] builds the flyout with the given context. Usually a [FlyoutContent]
   /// is used
   ///
+  /// {@template fluent_ui.flyouts.barrierDismissible}
   /// If [barrierDismissible] is true, tapping outside of the flyout will close
   /// it.
+  /// {@end-template}
   ///
   /// [barrierColor] is the color of the barrier.
   ///
+  /// {@template fluent_ui.flyouts.dismissWithEsc}
   /// When [dismissWithEsc] is true, the flyout can be dismissed by pressing the
   /// ESC key.
+  /// {@end-template}
   ///
+  /// {@template fluent_ui.flyouts.dismissOnPointerMoveAway}
   /// If [dismissOnPointerMoveAway] is enabled, the flyout is dismissed when the
   /// cursor moves away from either the target or the flyout. It's disabled by
   /// default.
+  /// {@end-template}
   ///
   /// [placementMode] describes where the flyout will be placed. Defaults to auto
   ///
@@ -521,7 +529,7 @@ class FlyoutController with ChangeNotifier {
   /// The default fade animation can not be disabled.
   ///
   /// [transitionDuration] configures the duration of the transition animation.
-  /// By default, [ThemeData.fastAnimationDuration] is used. Set to [Duration.zero]
+  /// By default, [FluentThemeData.fastAnimationDuration] is used. Set to [Duration.zero]
   /// to disable transitions at all
   ///
   /// [position] lets you position the flyout anywhere on the screen, making it
@@ -553,16 +561,31 @@ class FlyoutController with ChangeNotifier {
     transitionDuration ??= theme.fastAnimationDuration;
 
     final navigator = navigatorKey ?? Navigator.of(context);
-    final navigatorBox = navigator.context.findRenderObject() as RenderBox;
 
-    final targetBox = context.findRenderObject() as RenderBox;
-    final targetSize = targetBox.size;
-    final targetOffset =
-        targetBox.localToGlobal(Offset.zero, ancestor: navigatorBox) +
-            Offset(0, targetSize.height);
-    final targetRect =
-        targetBox.localToGlobal(Offset.zero, ancestor: navigatorBox) &
-            targetSize;
+    final Offset targetOffset;
+    final Size targetSize;
+    final Rect targetRect;
+
+    if (position != null) {
+      targetOffset = position;
+      targetSize = Size.zero;
+      targetRect = Rect.zero;
+    } else {
+      final navigatorBox = navigator.context.findRenderObject() as RenderBox;
+
+      final targetBox = context.findRenderObject() as RenderBox;
+      targetSize = targetBox.size;
+      targetOffset = targetBox.localToGlobal(
+            Offset.zero,
+            ancestor: navigatorBox,
+          ) +
+          Offset(0, targetSize.height);
+      targetRect = targetBox.localToGlobal(
+            Offset.zero,
+            ancestor: navigatorBox,
+          ) &
+          targetSize;
+    }
 
     _open = true;
     notifyListeners();
@@ -619,7 +642,7 @@ class FlyoutController with ChangeNotifier {
                 child: SafeArea(
                   child: CustomSingleChildLayout(
                     delegate: _FlyoutPositionDelegate(
-                      targetOffset: position ?? targetOffset,
+                      targetOffset: targetOffset,
                       targetSize: position == null ? targetSize : Size.zero,
                       autoModeConfiguration: autoModeConfiguration,
                       placementMode: placementMode,
@@ -738,10 +761,18 @@ class _DismissAction extends DismissAction {
   }
 }
 
+/// See also:
+///
+///  * [FlyoutController], the controller that displays a flyout attached to the
+///    given [child]
 class FlyoutTarget extends StatefulWidget {
+  /// The controller that displays a flyout attached to the given [child]
   final FlyoutController controller;
+
+  /// The flyout target widget. Flyouts are displayed attached to this
   final Widget child;
 
+  /// Creates a flyout target
   const FlyoutTarget({
     super.key,
     required this.controller,
@@ -754,28 +785,8 @@ class FlyoutTarget extends StatefulWidget {
 
 class _FlyoutTargetState extends State<FlyoutTarget> {
   @override
-  void initState() {
-    super.initState();
-    widget.controller._attach(this);
-  }
-
-  @override
-  void didUpdateWidget(covariant FlyoutTarget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (!widget.controller.isAttached) {
-      widget.controller._attach(this);
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.controller._detach();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    widget.controller._attach(this);
     return widget.child;
   }
 }

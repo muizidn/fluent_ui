@@ -25,7 +25,7 @@ class FlyoutContent extends StatelessWidget {
 
   /// The background color of the box.
   ///
-  /// If null, [ThemeData.menuColor] is used by default
+  /// If null, [FluentThemeData.menuColor] is used by default
   final Color? color;
 
   /// The shape to fill the [color] of the box.
@@ -79,7 +79,7 @@ class FlyoutContent extends StatelessWidget {
         child: Container(
           constraints: constraints,
           decoration: ShapeDecoration(
-            color: color ?? theme.menuColor.withOpacity(0.75),
+            color: color ?? theme.menuColor.withOpacity(kMenuColorOpacity),
             shape: resolvedShape,
           ),
           padding: padding,
