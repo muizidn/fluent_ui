@@ -4,7 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart' as m;
 
 class MaterialEquivalents extends StatefulWidget {
-  const MaterialEquivalents({Key? key}) : super(key: key);
+  const MaterialEquivalents({super.key});
 
   @override
   State<MaterialEquivalents> createState() => _MaterialEquivalentsState();
@@ -49,8 +49,8 @@ class _MaterialEquivalentsState extends State<MaterialEquivalents> {
         ),
       ],
       [
-        const Text('TextButton'),
-        TextButton(
+        const Text('HyperlinkButton'),
+        HyperlinkButton(
           child: const Text('Content'),
           onPressed: () {},
         ),

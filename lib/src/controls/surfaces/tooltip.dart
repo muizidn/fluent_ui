@@ -22,7 +22,7 @@ class Tooltip extends StatefulWidget {
   ///
   /// Wrap any widget in a [Tooltip] to show a message on mouse hover
   const Tooltip({
-    Key? key,
+    super.key,
     this.message,
     this.richMessage,
     this.child,
@@ -32,9 +32,10 @@ class Tooltip extends StatefulWidget {
     this.displayHorizontally = false,
     this.triggerMode,
     this.enableFeedback,
-  })  : assert((message == null) != (richMessage == null),
-            'Either `message` or `richMessage` must be specified'),
-        super(key: key);
+  }) : assert(
+          (message == null) != (richMessage == null),
+          'Either `message` or `richMessage` must be specified',
+        );
 
   /// The text to display in the tooltip.
   ///
@@ -366,16 +367,19 @@ class _TooltipState extends State<Tooltip> with SingleTickerProviderStateMixin {
   void _createNewEntry() {
     final overlayState = Overlay.of(
       context,
+      rootOverlay: true,
       debugRequiredFor: widget,
     );
 
     final box = context.findRenderObject()! as RenderBox;
-    var target = box.localToGlobal(
-      box.size.center(Offset.zero),
-      ancestor: overlayState.context.findRenderObject(),
-    );
+    Offset target;
     if (_mouseIsConnected && widget.useMousePosition && mousePosition != null) {
       target = mousePosition!;
+    } else {
+      target = box.localToGlobal(
+        box.size.center(Offset.zero),
+        ancestor: overlayState.context.findRenderObject(),
+      );
     }
 
     // We create this widget outside of the overlay entry's builder to prevent
@@ -551,10 +555,10 @@ class TooltipTheme extends InheritedTheme {
   /// Creates a tooltip theme that controls the configurations for
   /// [Tooltip].
   const TooltipTheme({
-    Key? key,
+    super.key,
     required this.data,
-    required Widget child,
-  }) : super(key: key, child: child);
+    required super.child,
+  });
 
   /// The properties for descendant [Tooltip] widgets.
   final TooltipThemeData data;
@@ -800,6 +804,7 @@ class _TooltipPositionDelegate extends SingleChildLayoutDelegate {
   /// direction, the tooltip will be displayed in the opposite direction.
   final bool preferBelow;
 
+  /// Whether the tooltip is in horizontal mode
   final bool horizontal;
 
   @override
@@ -837,7 +842,6 @@ class _TooltipPositionDelegate extends SingleChildLayoutDelegate {
 
 class _TooltipOverlay extends StatelessWidget {
   const _TooltipOverlay({
-    Key? key,
     required this.height,
     required this.richMessage,
     this.padding,
@@ -849,7 +853,7 @@ class _TooltipOverlay extends StatelessWidget {
     required this.verticalOffset,
     required this.preferBelow,
     this.displayHorizontally = false,
-  }) : super(key: key);
+  });
 
   final InlineSpan richMessage;
   final double height;
@@ -870,7 +874,7 @@ class _TooltipOverlay extends StatelessWidget {
         opacity: animation,
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: height),
-          child: DefaultTextStyle(
+          child: DefaultTextStyle.merge(
             style: FluentTheme.of(context).typography.body!,
             child: Container(
               decoration: decoration,

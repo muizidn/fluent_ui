@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
 import 'package:url_launcher/link.dart';
-import 'package:url_strategy/url_strategy.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'routes/forms.dart' deferred as forms;
@@ -43,8 +42,6 @@ void main() async {
     SystemTheme.accentColor.load();
   }
 
-  setPathUrlStrategy();
-
   if (isDesktop) {
     await flutter_acrylic.Window.initialize();
     await flutter_acrylic.Window.hideWindowControls();
@@ -54,9 +51,7 @@ void main() async {
         TitleBarStyle.hidden,
         windowButtonVisibility: false,
       );
-      await windowManager.setSize(const Size(755, 545));
-      await windowManager.setMinimumSize(const Size(350, 600));
-      await windowManager.center();
+      await windowManager.setMinimumSize(const Size(500, 600));
       await windowManager.show();
       await windowManager.setPreventClose(true);
       await windowManager.setSkipTaskbar(false);
@@ -76,7 +71,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
+
   // private navigators
 
   @override
@@ -95,14 +91,14 @@ class MyApp extends StatelessWidget {
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
             focusTheme: FocusThemeData(
-              glowFactor: is10footScreen() ? 2.0 : 0.0,
+              glowFactor: is10footScreen(context) ? 2.0 : 0.0,
             ),
           ),
           theme: FluentThemeData(
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
             focusTheme: FocusThemeData(
-              glowFactor: is10footScreen() ? 2.0 : 0.0,
+              glowFactor: is10footScreen(context) ? 2.0 : 0.0,
             ),
           ),
           locale: appTheme.locale,
@@ -131,11 +127,11 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({
-    Key? key,
+    super.key,
     required this.child,
     required this.shellContext,
     required this.state,
-  }) : super(key: key);
+  });
 
   final Widget child;
   final BuildContext? shellContext;
@@ -252,6 +248,17 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
       onTap: () {
         if (router.location != '/forms/numberbox') {
           router.pushNamed('forms_numberbox');
+        }
+      },
+    ),
+    PaneItem(
+      key: const Key('/forms/passwordbox'),
+      icon: const Icon(FluentIcons.password_field),
+      title: const Text('PasswordBox'),
+      body: const SizedBox.shrink(),
+      onTap: () {
+        if (router.location != '/forms/passwordbox') {
+          router.pushNamed('forms_passwordbox');
         }
       },
     ),
@@ -714,7 +721,7 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
 }
 
 class WindowButtons extends StatelessWidget {
-  const WindowButtons({Key? key}) : super(key: key);
+  const WindowButtons({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -874,6 +881,15 @@ final router = GoRouter(
           builder: (context, state) => DeferredWidget(
             forms.loadLibrary,
             () => forms.NumberBoxPage(),
+          ),
+        ),
+
+        GoRoute(
+          path: '/forms/passwordbox',
+          name: 'forms_passwordbox',
+          builder: (context, state) => DeferredWidget(
+            forms.loadLibrary,
+            () => forms.PasswordBoxPage(),
           ),
         ),
 

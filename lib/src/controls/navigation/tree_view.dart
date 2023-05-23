@@ -446,13 +446,16 @@ extension TreeViewItemCollection on List<TreeViewItem> {
 ///
 /// Used by [TreeView.onSelectionChanged]
 typedef TreeViewSelectionChangedCallback = Future<void> Function(
-    Iterable<TreeViewItem> selectedItems)?;
+  Iterable<TreeViewItem> selectedItems,
+)?;
 
 /// A callback that receives a notification that an item has been invoked.
 ///
 /// Used by [TreeView.onItemInvoked]
 typedef TreeViewItemInvoked = Future<void> Function(
-    TreeViewItem item, TreeViewItemInvokeReason reason);
+  TreeViewItem item,
+  TreeViewItemInvokeReason reason,
+);
 
 /// A callback that receives a notification that an item
 /// received a secondary tap.
@@ -499,7 +502,7 @@ class TreeView extends StatefulWidget {
   ///
   /// [items] must not be empty
   const TreeView({
-    Key? key,
+    super.key,
     required this.items,
     this.selectionMode = TreeViewSelectionMode.none,
     this.onSelectionChanged,
@@ -517,8 +520,7 @@ class TreeView extends StatefulWidget {
     this.narrowSpacing = false,
     this.includePartiallySelectedItems = false,
     this.deselectParentWhenChildrenDeselected = true,
-  })  : assert(items.length > 0, 'There must be at least one item'),
-        super(key: key);
+  }) : assert(items.length > 0, 'There must be at least one item');
 
   /// The items of the tree view.
   ///
@@ -628,6 +630,14 @@ class TreeView extends StatefulWidget {
 
 class TreeViewState extends State<TreeView> with AutomaticKeepAliveClientMixin {
   late List<TreeViewItem> _items;
+
+  /// Performs a build of all the items in the tree view.
+  ///
+  /// This is useful when an item needs to be updated outside of the built-in
+  /// callbacks.
+  ///
+  /// This operation is expensive and should be used with caution.
+  void buildItems() => _buildItems();
 
   /// Builds all the items based on the items provided by the [widget]
   void _buildItems() {
@@ -752,20 +762,19 @@ class TreeViewState extends State<TreeView> with AutomaticKeepAliveClientMixin {
               },
               onExpandToggle: () async {
                 await _invokeItem(item, TreeViewItemInvokeReason.expandToggle);
+
                 if (item.collapsable) {
                   if (item.lazy) {
                     // Triggers a loading indicator.
-                    setState(() {
-                      item.loading = true;
-                    });
+                    setState(() => item.loading = true);
                   }
 
-                  if (widget.onItemExpandToggle != null) {
-                    await widget.onItemExpandToggle!(item, !item.expanded);
-                  }
-                  if (item.onExpandToggle != null) {
-                    await item.onExpandToggle!(item, !item.expanded);
-                  }
+                  await Future.wait([
+                    if (widget.onItemExpandToggle != null)
+                      widget.onItemExpandToggle!(item, !item.expanded),
+                    if (item.onExpandToggle != null)
+                      item.onExpandToggle!(item, !item.expanded),
+                  ]);
 
                   // Remove the loading indicator.
                   // Toggle the expand icon.
@@ -789,11 +798,15 @@ class TreeViewState extends State<TreeView> with AutomaticKeepAliveClientMixin {
   Future<void> _invokeItem(
     TreeViewItem item,
     TreeViewItemInvokeReason reason,
-  ) {
-    return Future.wait([
+  ) async {
+    if (widget.onItemInvoked == null && item.onInvoked == null) return;
+
+    await Future.wait([
       if (widget.onItemInvoked != null) widget.onItemInvoked!(item, reason),
       if (item.onInvoked != null) item.onInvoked!(item, reason),
     ]);
+
+    _buildItems();
   }
 
   /// Toggles the [item] expanded state
@@ -810,7 +823,7 @@ class TreeViewState extends State<TreeView> with AutomaticKeepAliveClientMixin {
 
 class _TreeViewItem extends StatelessWidget {
   const _TreeViewItem({
-    Key? key,
+    super.key,
     required this.item,
     required this.selectionMode,
     required this.onSelect,
@@ -819,7 +832,7 @@ class _TreeViewItem extends StatelessWidget {
     required this.onInvoked,
     required this.loadingWidgetFallback,
     required this.narrowSpacing,
-  }) : super(key: key);
+  });
 
   final TreeViewItem item;
   final TreeViewSelectionMode selectionMode;
@@ -937,6 +950,7 @@ class _TreeViewItem extends StatelessWidget {
                     if (selectionMode == TreeViewSelectionMode.multiple)
                       Padding(
                         padding: EdgeInsetsDirectional.only(
+                          start: 8.0,
                           end: narrowSpacing ? 0.0 : _whiteSpace,
                         ),
                         child: Checkbox(
@@ -1006,7 +1020,7 @@ class _TreeViewItem extends StatelessWidget {
 
                     // Item content
                     Expanded(
-                      child: DefaultTextStyle(
+                      child: DefaultTextStyle.merge(
                         style: TextStyle(
                           fontSize: 12.0,
                           color: itemForegroundColor,

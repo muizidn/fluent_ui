@@ -1,6 +1,42 @@
-## [next]
+## 4.6.1
 
-- Add `NumberBox` widget. ([#560](https://github.com/bdlukaa/fluent_ui/issues/560) [#771](https://github.com/bdlukaa/fluent_ui/pull/771))
+- Fix incompatibilities with Flutter 3.10
+
+## 4.6.0 - Flutter 3.10
+
+- **BREAKING** Removed `FluentApp.useInheritedMediaQuery`
+- Upgrade the `scroll_pos` dependency (from @WinXaito) to version v0.4.0 ([#831](https://github.com/bdlukaa/fluent_ui/pull/831))
+- Added support for Urdu language ([#832](https://github.com/bdlukaa/fluent_ui/pull/832))
+
+
+## 4.5.1
+
+- Do not unfocus the auto suggest box on clear ([#816](https://github.com/bdlukaa/fluent_ui/issues/816))
+- Review all the inputs margins and inputs ([#799](https://github.com/bdlukaa/fluent_ui/pull/799))
+- `HyperlinkButton` now uses the correct color in dark mode ([#817](https://github.com/bdlukaa/fluent_ui/pull/817))
+- `DatePicker`, `TimePicker` and all other overlay widgets are now positioned correctly if there are multiple navigators ([#817](https://github.com/bdlukaa/fluent_ui/pull/817))
+- Added `PasswordFormBox` ([#811](https://github.com/bdlukaa/fluent_ui/issues/811))
+- `DateTime.startYear` and `DateTime.endYear` are now deprecated. Use `DateTime.startDate` and `DateTime.endDate` instead. ([#687](https://github.com/bdlukaa/fluent_ui/issues/687))
+- Added `.decoration`, `.foregroundDecoration`, `.highlightColor`, `.unfocusedColor`, `.keyboardAppearance`, `.textAlign`, `.textAlignVertical` to `PasswordBox` ([#820](https://github.com/bdlukaa/fluent_ui/issues/820))
+- Do not block text style inheritance in widgets ([#823](https://github.com/bdlukaa/fluent_ui/pull/823))
+- `NavigationView` now works correctly in top mode ([#821](https://github.com/bdlukaa/fluent_ui/pull/821))
+- Add `showDialog.dismissWithEsc` ([#826](https://github.com/bdlukaa/fluent_ui/issues/826))
+
+## 4.5.0
+
+- **MINOR BREAKING** Remove default value of `backButtonDispatcher` when using `FluentApp.router` ([#803](https://github.com/bdlukaa/fluent_ui/pull/803))
+- Add parameters `onTapDown` and `onTapUp` on all buttons. ([#795](https://github.com/bdlukaa/fluent_ui/pull/795))
+   - **Breaking: if you use the abstract class `BaseButton`, these two parameters are now required** 
+- Add `PasswordBox` widget ([#795](https://github.com/bdlukaa/fluent_ui/pull/795))
+- Improve example in Navigation/NavigationView in app. ([#796](https://github.com/bdlukaa/fluent_ui/pull/796))
+- Added Tamil language localization. ([#798](https://github.com/bdlukaa/fluent_ui/pull/798))
+- **BREAKING CHANGE** `TextButton` is renamed to `HyperlinkButton` and `ButtonThemeData.textButtonStyle` is renamed to `ButtonThemeData.hyperlinkButtonStyle` ([#802](https://github.com/bdlukaa/fluent_ui/pull/802))
+- Added `.notificationPredicate`, `.scrollbarOrientation`, `.pressDuration` and `.minOverscrollLength` to `Scrollbar` ([#809](https://github.com/bdlukaa/fluent_ui/issues/809))
+- Rebuild the `TreeView` elements on item invocation ([#810](https://github.com/bdlukaa/fluent_ui/issues/810))
+
+## 4.4.2
+
+- Add `NumberBox` widget. ([#560](https://github.com/bdlukaa/fluent_ui/issues/560) [#771](https://github.com/bdlukaa/fluent_ui/pull/771) [#789](https://github.com/bdlukaa/fluent_ui/pull/789))
 - Add support for `routerConfig` to `FluentApp.router` ([#781](https://github.com/bdlukaa/fluent_ui/issues/781))
 - Add source code for `Show InfoBar` in example application. ([#785](https://github.com/bdlukaa/fluent_ui/pull/785))
 - Make `color` optional in `FluentApp.router`. ([#782](https://github.com/bdlukaa/fluent_ui/issues/782))
@@ -21,7 +57,9 @@
 
 - `TabView` lazy loading ([#751](https://github.com/bdlukaa/fluent_ui/issues/751))
 - Added Bangla localization ([#786](https://github.com/bdlukaa/fluent_ui/pull/786))
-- Correctly position the flyouts on a multi navigator context ([#780](https://github.com/bdlukaa/fluent_ui/pull/780))
+- Correctly position the flyouts and tooltips on a multi navigator context ([#780](https://github.com/bdlukaa/fluent_ui/pull/780))
+- Allow all kinds of menu flyout widgets on `DropDownButton` ([#775](https://github.com/bdlukaa/fluent_ui/issues/775))
+- Added `CommandBarCard.borderColor`
 
 ## 4.4.1
 

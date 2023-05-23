@@ -38,6 +38,7 @@ class BottomNavigationItem {
 /// ![BottomNavigation Preview](https://static2.sharepointonline.com/files/fabric/fabric-website/images/controls/android/updated/img_bottomnavigation_01_dark.png?text=DarkMode)
 ///
 /// See also:
+///
 ///   * [BottomNavigationItem], the items used by this widget
 ///   * [BottomNavigationThemeData], used to style this widget
 ///   * [ScaffoldPage], used to layout pages
@@ -48,14 +49,13 @@ class BottomNavigation extends StatelessWidget {
   ///
   /// [index] must be in the range of 0 to [items.length]
   const BottomNavigation({
-    Key? key,
+    super.key,
     required this.items,
     required this.index,
     this.onChanged,
     this.style,
   })  : assert(items.length >= 2),
-        assert(index >= 0 && index < items.length),
-        super(key: key);
+        assert(index >= 0 && index < items.length);
 
   /// The items displayed by this widget. There must be at least 2
   /// items in the list.
@@ -99,7 +99,7 @@ class BottomNavigation extends StatelessWidget {
       elevation: 8.0,
       shadowColor: FluentTheme.of(context).shadowColor,
       child: Container(
-        height: _kBottomNavigationHeight,
+        constraints: const BoxConstraints(minHeight: _kBottomNavigationHeight),
         color: style.backgroundColor,
         child: Row(
           children: items.map((item) {
@@ -120,12 +120,12 @@ class BottomNavigation extends StatelessWidget {
 
 class _BottomNavigationItem extends StatelessWidget {
   const _BottomNavigationItem({
-    Key? key,
+    super.key,
     required this.item,
     required this.selected,
     required this.style,
     this.onPressed,
-  }) : super(key: key);
+  });
 
   final BottomNavigationItem item;
   final bool selected;
@@ -149,7 +149,7 @@ class _BottomNavigationItem extends StatelessWidget {
             if (item.title != null)
               Padding(
                 padding: const EdgeInsetsDirectional.only(top: 1.0),
-                child: DefaultTextStyle(
+                child: DefaultTextStyle.merge(
                   style: FluentTheme.of(context).typography.caption!.copyWith(
                         color: selected
                             ? style.selectedColor
@@ -185,10 +185,10 @@ class BottomNavigationTheme extends InheritedTheme {
   /// Creates a button theme that controls the configurations for
   /// [BottomNavigation].
   const BottomNavigationTheme({
-    Key? key,
-    required Widget child,
+    super.key,
+    required super.child,
     required this.data,
-  }) : super(key: key, child: child);
+  });
 
   /// The properties for descendant [BottomNavigation] widgets.
   final BottomNavigationThemeData data;

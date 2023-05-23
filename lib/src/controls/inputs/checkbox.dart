@@ -18,7 +18,7 @@ import 'package:flutter/rendering.dart';
 class Checkbox extends StatelessWidget {
   /// Creates a checkbox.
   const Checkbox({
-    Key? key,
+    super.key,
     required this.checked,
     required this.onChanged,
     this.style,
@@ -26,7 +26,7 @@ class Checkbox extends StatelessWidget {
     this.semanticLabel,
     this.focusNode,
     this.autofocus = false,
-  }) : super(key: key);
+  });
 
   /// Whether the checkbox is checked or not.
   ///
@@ -133,7 +133,7 @@ class Checkbox extends StatelessWidget {
         if (content != null) {
           child = Row(mainAxisSize: MainAxisSize.min, children: [
             child,
-            const SizedBox(width: 6.0),
+            const SizedBox(width: 8.0),
             content!,
           ]);
         }
@@ -151,7 +151,7 @@ class Checkbox extends StatelessWidget {
 }
 
 class _ThirdStateDash extends StatelessWidget {
-  const _ThirdStateDash({Key? key, required this.color}) : super(key: key);
+  const _ThirdStateDash({required this.color});
 
   final Color color;
 
@@ -169,10 +169,10 @@ class CheckboxTheme extends InheritedTheme {
   /// Creates a button theme that controls how descendant [Checkbox]es should
   /// look like.
   const CheckboxTheme({
-    Key? key,
-    required Widget child,
+    super.key,
+    required super.child,
     required this.data,
-  }) : super(key: key, child: child);
+  });
 
   final CheckboxThemeData data;
 
@@ -284,7 +284,6 @@ class CheckboxThemeData with Diagnosticable {
       }),
       uncheckedIconColor: ButtonState.all(Colors.transparent),
       icon: FluentIcons.check_mark,
-      margin: const EdgeInsets.all(4.0),
     );
   }
 
@@ -375,10 +374,9 @@ class CheckboxThemeData with Diagnosticable {
 class _Icon extends StatelessWidget {
   const _Icon(
     this.icon, {
-    Key? key,
     this.size,
     this.color,
-  }) : super(key: key);
+  });
 
   final IconData? icon;
 

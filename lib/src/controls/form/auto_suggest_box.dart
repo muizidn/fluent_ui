@@ -91,7 +91,7 @@ class AutoSuggestBoxItem<T> {
 class AutoSuggestBox<T> extends StatefulWidget {
   /// Creates a fluent-styled auto suggest box.
   const AutoSuggestBox({
-    Key? key,
+    super.key,
     required this.items,
     this.controller,
     this.onChanged,
@@ -125,12 +125,11 @@ class AutoSuggestBox<T> extends StatefulWidget {
     this.inputFormatters,
     this.maxPopupHeight = kAutoSuggestBoxPopupMaxHeight,
   })  : autovalidateMode = AutovalidateMode.disabled,
-        validator = null,
-        super(key: key);
+        validator = null;
 
   /// Creates a fluent-styled auto suggest form box.
   const AutoSuggestBox.form({
-    Key? key,
+    super.key,
     required this.items,
     this.controller,
     this.onChanged,
@@ -165,7 +164,7 @@ class AutoSuggestBox<T> extends StatefulWidget {
     this.enabled = true,
     this.inputFormatters,
     this.maxPopupHeight = kAutoSuggestBoxPopupMaxHeight,
-  }) : super(key: key);
+  });
 
   /// The list of items to display to the user to pick
   final List<AutoSuggestBoxItem<T>> items;
@@ -476,13 +475,24 @@ class _AutoSuggestBoxState<T> extends State<AutoSuggestBox<T>> {
   }
 
   void _insertOverlay() {
+    final overlayState = Overlay.of(
+      context,
+      rootOverlay: true,
+      debugRequiredFor: widget,
+    );
+
     _entry = OverlayEntry(builder: (context) {
       assert(debugCheckHasMediaQuery(context));
 
       final boxContext = _textBoxKey.currentContext;
       if (boxContext == null) return const SizedBox.shrink();
       final box = boxContext.findRenderObject() as RenderBox;
-      final globalOffset = box.localToGlobal(Offset.zero);
+
+      // ancestor is not necessary here because we are not dealing with routes, but overlays
+      final globalOffset = box.localToGlobal(
+        Offset.zero,
+        ancestor: overlayState.context.findRenderObject(),
+      );
 
       final mediaQuery = MediaQuery.of(context);
       final screenHeight =
@@ -545,7 +555,7 @@ class _AutoSuggestBoxState<T> extends State<AutoSuggestBox<T>> {
     });
 
     if (_textBoxKey.currentContext != null) {
-      Overlay.of(context).insert(_entry!);
+      overlayState.insert(_entry!);
       if (mounted) setState(() {});
     }
   }
@@ -607,9 +617,6 @@ class _AutoSuggestBoxState<T> extends State<AutoSuggestBox<T>> {
               widget.onChanged?.call(
                 controller.text,
                 TextChangedReason.cleared,
-              );
-              focusNode.unfocus(
-                disposition: UnfocusDisposition.previouslyFocusedChild,
               );
             },
           ),
@@ -736,7 +743,7 @@ class _AutoSuggestBoxState<T> extends State<AutoSuggestBox<T>> {
 
 class _AutoSuggestBoxOverlay<T> extends StatefulWidget {
   const _AutoSuggestBoxOverlay({
-    Key? key,
+    super.key,
     required this.items,
     required this.controller,
     required this.onSelected,
@@ -746,7 +753,7 @@ class _AutoSuggestBoxOverlay<T> extends StatefulWidget {
     required this.sorter,
     required this.maxHeight,
     required this.noResultsFoundBuilder,
-  }) : super(key: key);
+  });
 
   final List<AutoSuggestBoxItem<T>> items;
   final TextEditingController controller;
@@ -880,11 +887,10 @@ class _AutoSuggestBoxOverlayState<T> extends State<_AutoSuggestBoxOverlay<T>> {
 
 class _AutoSuggestBoxOverlayTile extends StatefulWidget {
   const _AutoSuggestBoxOverlayTile({
-    Key? key,
     required this.text,
     this.selected = false,
     this.onSelected,
-  }) : super(key: key);
+  });
 
   final Widget text;
   final VoidCallback? onSelected;
@@ -928,8 +934,8 @@ class __AutoSuggestBoxOverlayTileState extends State<_AutoSuggestBoxOverlayTile>
           parent: controller,
           curve: Curves.easeOut,
         )),
-        child: DefaultTextStyle(
-          style: theme.typography.body ?? const TextStyle(),
+        child: DefaultTextStyle.merge(
+          style: theme.typography.body,
           child: widget.text,
         ),
       ),

@@ -11,7 +11,7 @@ typedef ButtonStateWidgetBuilder = Widget Function(
 class HoverButton extends StatefulWidget {
   /// Creates a hover button.
   const HoverButton({
-    Key? key,
+    super.key,
     required this.builder,
     this.cursor,
     this.onPressed,
@@ -35,7 +35,7 @@ class HoverButton extends StatefulWidget {
     this.focusEnabled = true,
     this.forceEnabled = false,
     this.hitTestBehavior = HitTestBehavior.opaque,
-  }) : super(key: key);
+  });
 
   /// {@template fluent_ui.controls.inputs.HoverButton.mouseCursor}
   /// The cursor for a mouse pointer when it enters or is hovering over the
@@ -238,16 +238,20 @@ class _HoverButtonState extends State<HoverButton> {
         if (mounted) setState(() => _pressing = false);
       },
       onLongPress: enabled ? widget.onLongPress : null,
-      onLongPressStart: (_) {
-        if (!enabled) return;
-        widget.onLongPressStart?.call();
-        if (mounted) setState(() => _pressing = true);
-      },
-      onLongPressEnd: (_) {
-        if (!enabled) return;
-        widget.onLongPressEnd?.call();
-        if (mounted) setState(() => _pressing = false);
-      },
+      onLongPressStart: widget.onLongPressStart != null
+          ? (_) {
+              if (!enabled) return;
+              widget.onLongPressStart?.call();
+              if (mounted) setState(() => _pressing = true);
+            }
+          : null,
+      onLongPressEnd: widget.onLongPressEnd != null
+          ? (_) {
+              if (!enabled) return;
+              widget.onLongPressEnd?.call();
+              if (mounted) setState(() => _pressing = false);
+            }
+          : null,
       onHorizontalDragStart: widget.onHorizontalDragStart,
       onHorizontalDragUpdate: widget.onHorizontalDragUpdate,
       onHorizontalDragEnd: widget.onHorizontalDragEnd,

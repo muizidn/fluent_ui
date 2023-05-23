@@ -11,33 +11,57 @@ import 'package:flutter/foundation.dart';
 ///
 ///   * <https://developer.microsoft.com/en-us/fluentui#/controls/android/button>
 ///   * <https://developer.microsoft.com/en-us/fluentui#/controls/web/button>
-///   * [TextButton], a borderless button with mainly text-based content
+///   * [HyperlinkButton], a borderless button with mainly text-based content
 ///   * [OutlinedButton], an outlined button
 ///   * [FilledButton], a colored button
 abstract class BaseButton extends StatefulWidget {
   const BaseButton({
-    Key? key,
+    super.key,
     required this.onPressed,
     required this.onLongPress,
+    required this.onTapDown,
+    required this.onTapUp,
     required this.style,
     required this.focusNode,
     required this.autofocus,
     required this.child,
     required this.focusable,
-  }) : super(key: key);
+  });
 
   /// Called when the button is tapped or otherwise activated.
   ///
-  /// If this callback and [onLongPress] are null, then the button will be disabled.
+  /// If this callback, [onLongPress], [onTapDown], and [onTapUp] are null,
+  /// then the button will be disabled.
   ///
   /// See also:
   ///
   ///  * [enabled], which is true if the button is enabled.
   final VoidCallback? onPressed;
 
+  /// Called when the button is pressed.
+  ///
+  /// If this callback, [onLongPress], [onPressed] and [onTapUp] are null,
+  /// then the button will be disabled.
+  ///
+  /// See also:
+  ///
+  ///  * [enabled], which is true if the button is enabled.
+  final VoidCallback? onTapDown;
+
+  /// Called when the button is released.
+  ///
+  /// If this callback, [onLongPress], [onPressed] and [onTapDown] are null,
+  /// then the button will be disabled.
+  ///
+  /// See also:
+  ///
+  ///  * [enabled], which is true if the button is enabled.
+  final VoidCallback? onTapUp;
+
   /// Called when the button is long-pressed.
   ///
-  /// If this callback and [onPressed] are null, then the button will be disabled.
+  /// If this callback, [onPressed], [onTapDown] and [onTapUp] are null,
+  /// then the button will be disabled.
   ///
   /// See also:
   ///
@@ -68,9 +92,13 @@ abstract class BaseButton extends StatefulWidget {
 
   /// Whether the button is enabled or disabled.
   ///
-  /// Buttons are disabled by default. To enable a button, set its [onPressed]
-  /// or [onLongPress] properties to a non-null value.
-  bool get enabled => onPressed != null || onLongPress != null;
+  /// Buttons are disabled by default. To enable a button, set its [onPressed],
+  /// [onLongPress], [onTapDown] or [onTapUp] properties to a non-null value.
+  bool get enabled =>
+      onPressed != null ||
+      onLongPress != null ||
+      onTapDown != null ||
+      onTapUp != null;
 
   @override
   State<BaseButton> createState() => _BaseButtonState();
@@ -110,6 +138,8 @@ class _BaseButtonState extends State<BaseButton> {
       onPressed: widget.onPressed,
       onLongPress: widget.onLongPress,
       focusEnabled: widget.focusable,
+      onTapDown: widget.onTapDown,
+      onTapUp: widget.onTapUp,
       builder: (context, states) {
         T? resolve<T>(
             ButtonState<T>? Function(ButtonStyle? style) getProperty) {
@@ -169,8 +199,10 @@ class _BaseButtonState extends State<BaseButton> {
               child: AnimatedDefaultTextStyle(
                 duration: FluentTheme.of(context).fastAnimationDuration,
                 curve: FluentTheme.of(context).animationCurve,
-                style: (resolvedTextStyle ?? const TextStyle())
-                    .copyWith(color: resolvedForegroundColor),
+                style: DefaultTextStyle.of(context).style.merge(
+                      (resolvedTextStyle ?? const TextStyle())
+                          .copyWith(color: resolvedForegroundColor),
+                    ),
                 textAlign: TextAlign.center,
                 child: widget.child,
               ),

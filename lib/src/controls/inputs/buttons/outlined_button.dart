@@ -7,27 +7,20 @@ import 'package:fluent_ui/fluent_ui.dart';
 /// See also:
 ///
 ///   * [FilledButton], a colored button
-///   * [TextButton], a borderless button with mainly text-based content
+///   * [HyperlinkButton], a borderless button with mainly text-based content
 class OutlinedButton extends BaseButton {
   const OutlinedButton({
-    Key? key,
-    required Widget child,
-    required VoidCallback? onPressed,
-    VoidCallback? onLongPress,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    ButtonStyle? style,
-    bool focusable = true,
-  }) : super(
-          key: key,
-          child: child,
-          focusNode: focusNode,
-          autofocus: autofocus,
-          onLongPress: onLongPress,
-          onPressed: onPressed,
-          style: style,
-          focusable: focusable,
-        );
+    super.key,
+    required super.child,
+    required super.onPressed,
+    super.onLongPress,
+    super.onTapDown,
+    super.onTapUp,
+    super.focusNode,
+    super.autofocus = false,
+    super.style,
+    super.focusable = true,
+  });
 
   @override
   ButtonStyle defaultStyleOf(BuildContext context) {
@@ -35,10 +28,7 @@ class OutlinedButton extends BaseButton {
     final theme = FluentTheme.of(context);
 
     return ButtonStyle(
-      padding: ButtonState.all(const EdgeInsets.symmetric(
-        horizontal: 12.0,
-        vertical: 6.0,
-      )),
+      padding: ButtonState.all(kDefaultButtonPadding),
       shape: ButtonState.all(RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(2.0),
       )),
