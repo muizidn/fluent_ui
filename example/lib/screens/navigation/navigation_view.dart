@@ -1,5 +1,8 @@
 import 'package:example/widgets/card_highlight.dart';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../widgets/page.dart';
 
@@ -36,6 +39,7 @@ class _NavigationViewPageState extends State<NavigationViewPage>
       icon: const Icon(FluentIcons.home),
       title: const Text('Home'),
       body: const _NavigationBodyItem(),
+      onTap: () => debugPrint('Tapped home'),
     ),
     PaneItemSeparator(),
     PaneItem(
@@ -53,16 +57,19 @@ class _NavigationViewPageState extends State<NavigationViewPage>
           'number, icon, or a simple dot.',
         ),
       ),
+      onTap: () => debugPrint('Tapped track orders'),
     ),
     PaneItem(
       icon: const Icon(FluentIcons.disable_updates),
       title: const Text('Disabled Item'),
       body: const _NavigationBodyItem(),
       enabled: false,
+      onTap: () => debugPrint('Tapped disabled'),
     ),
     PaneItemExpander(
       icon: const Icon(FluentIcons.account_management),
       title: const Text('Account'),
+      initiallyExpanded: true,
       body: const _NavigationBodyItem(
         header: 'PaneItemExpander',
         content: Text(
@@ -75,17 +82,20 @@ class _NavigationViewPageState extends State<NavigationViewPage>
           'cases, you should create a hierarchical NavigationView.',
         ),
       ),
+      onTap: () => debugPrint('Tapped account'),
       items: [
         PaneItemHeader(header: const Text('Apps')),
         PaneItem(
           icon: const Icon(FluentIcons.mail),
           title: const Text('Mail'),
           body: const _NavigationBodyItem(),
+          onTap: () => debugPrint('Tapped mail'),
         ),
         PaneItem(
           icon: const Icon(FluentIcons.calendar),
           title: const Text('Calendar'),
           body: const _NavigationBodyItem(),
+          onTap: () => debugPrint('Tapped calendar'),
         ),
       ],
     ),
@@ -143,10 +153,10 @@ class _NavigationViewPageState extends State<NavigationViewPage>
             items: ([...PaneDisplayMode.values]..remove(PaneDisplayMode.auto))
                 .map((mode) {
               return ComboBoxItem(
+                value: mode,
                 child: Text(
                   mode.name.uppercaseFirst(),
                 ),
-                value: mode,
               );
             }).toList(),
             onChanged: (mode) => setState(
@@ -158,7 +168,7 @@ class _NavigationViewPageState extends State<NavigationViewPage>
           label: 'Page Transition',
           child: ComboBox<String>(
             items: pageTransitions
-                .map((e) => ComboBoxItem(child: Text(e), value: e))
+                .map((e) => ComboBoxItem(value: e, child: Text(e)))
                 .toList(),
             value: pageTransition,
             onChanged: (transition) => setState(
@@ -170,7 +180,7 @@ class _NavigationViewPageState extends State<NavigationViewPage>
           label: 'Indicator',
           child: ComboBox<String>(
             items: indicators.keys
-                .map((e) => ComboBoxItem(child: Text(e), value: e))
+                .map((e) => ComboBoxItem(value: e, child: Text(e)))
                 .toList(),
             value: indicator,
             onChanged: (i) => setState(
@@ -178,76 +188,33 @@ class _NavigationViewPageState extends State<NavigationViewPage>
             ),
           ),
         ),
+        InfoLabel(
+          label: '',
+          child: Button(
+            onPressed: () {
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).push(FluentPageRoute(builder: (context) {
+                return const NavigationViewShellRoute();
+              }));
+            },
+            child: const Text('Open in a new screen'),
+          ),
+        ),
+        InfoLabel(
+          label: '',
+          child: Button(
+            onPressed: () {
+              context.go('/navigation_view');
+            },
+            child: const Text('Open in a new shell route'),
+          ),
+        ),
       ]),
       subtitle(content: Text(title)),
       description(content: Text(desc)),
       CardHighlight(
-        child: SizedBox(
-          height: itemHeight,
-          child: NavigationView(
-            appBar: const NavigationAppBar(
-              title: Text('NavigationView'),
-            ),
-            pane: NavigationPane(
-              selected: topIndex,
-              onChanged: (index) => setState(() => topIndex = index),
-              displayMode: displayMode,
-              indicator: indicators[indicator],
-              header: const Text('Pane Header'),
-              items: items,
-              footerItems: [
-                PaneItem(
-                  icon: const Icon(FluentIcons.settings),
-                  title: const Text('Settings'),
-                  body: const _NavigationBodyItem(),
-                ),
-                PaneItemAction(
-                  icon: const Icon(FluentIcons.add),
-                  title: const Text('Add New Item'),
-                  onTap: () {
-                    items.add(
-                      PaneItem(
-                        icon: const Icon(FluentIcons.new_folder),
-                        title: const Text('New Item'),
-                        body: const Center(
-                          child: Text(
-                            'This is a newly added Item',
-                          ),
-                        ),
-                      ),
-                    );
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
-            transitionBuilder: pageTransition == 'Default'
-                ? null
-                : (child, animation) {
-                    switch (pageTransition) {
-                      case 'Entrance':
-                        return EntrancePageTransition(
-                          child: child,
-                          animation: animation,
-                        );
-                      case 'Drill in':
-                        return DrillInPageTransition(
-                          child: child,
-                          animation: animation,
-                        );
-                      case 'Horizontal':
-                        return HorizontalSlidePageTransition(
-                          child: child,
-                          animation: animation,
-                        );
-                      default:
-                        throw UnsupportedError(
-                          '$pageTransition is not a supported transition',
-                        );
-                    }
-                  },
-          ),
-        ),
         codeSnippet: '''
 // Do not define the `items` inside the `Widget Build` function
 // otherwise on running `setstate`, new item can not be added.
@@ -351,8 +318,107 @@ NavigationView(
     ],
   ),
 )''',
+        child: SizedBox(
+          height: itemHeight,
+          child: NavigationView(
+            appBar: const NavigationAppBar(
+              title: Text('NavigationView'),
+            ),
+            pane: NavigationPane(
+              selected: topIndex,
+              onChanged: (index) => setState(() => topIndex = index),
+              displayMode: displayMode,
+              indicator: indicators[indicator],
+              header: const Text('Pane Header'),
+              items: items,
+              footerItems: [
+                PaneItem(
+                  icon: const Icon(FluentIcons.settings),
+                  title: const Text('Settings'),
+                  body: const _NavigationBodyItem(),
+                ),
+                PaneItemAction(
+                  icon: const Icon(FluentIcons.add),
+                  title: const Text('Add New Item'),
+                  onTap: () {
+                    items.add(
+                      PaneItem(
+                        icon: const Icon(FluentIcons.new_folder),
+                        title: const Text('New Item'),
+                        body: const Center(
+                          child: Text(
+                            'This is a newly added Item',
+                          ),
+                        ),
+                      ),
+                    );
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            transitionBuilder: pageTransition == 'Default'
+                ? null
+                : (child, animation) {
+                    switch (pageTransition) {
+                      case 'Entrance':
+                        return EntrancePageTransition(
+                          animation: animation,
+                          child: child,
+                        );
+                      case 'Drill in':
+                        return DrillInPageTransition(
+                          animation: animation,
+                          child: child,
+                        );
+                      case 'Horizontal':
+                        return HorizontalSlidePageTransition(
+                          animation: animation,
+                          child: child,
+                        );
+                      default:
+                        throw UnsupportedError(
+                          '$pageTransition is not a supported transition',
+                        );
+                    }
+                  },
+          ),
+        ),
       ),
     ];
+  }
+}
+
+class NavigationViewShellRoute extends StatelessWidget {
+  const NavigationViewShellRoute({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationView(
+      appBar: NavigationAppBar(
+        title: () {
+          const title = Text('NavigationView');
+
+          if (kIsWeb) return title;
+
+          return const DragToMoveArea(child: title);
+        }(),
+        leading: IconButton(
+          icon: const Icon(FluentIcons.back),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      content: const ScaffoldPage(
+        header: PageHeader(
+          title: Text('New Page'),
+        ),
+        content: Center(
+          child: Text('This is a new page'),
+        ),
+      ),
+    );
   }
 }
 

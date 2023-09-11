@@ -6,10 +6,12 @@ class CardHighlight extends StatefulWidget {
   const CardHighlight({
     super.key,
     this.backgroundColor,
+    this.header,
     required this.child,
     required this.codeSnippet,
   });
 
+  final Widget? header;
   final Widget child;
   final String codeSnippet;
 
@@ -34,22 +36,23 @@ class _CardHighlightState extends State<CardHighlight>
     final theme = FluentTheme.of(context);
 
     return Column(children: [
-      Card(
-        backgroundColor: widget.backgroundColor,
+      Mica(
+        backgroundColor: widget.backgroundColor ??
+            theme.resources.controlAltFillColorQuarternary,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(4.0)),
-        child: SizedBox(
-          width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
           child: Align(
             alignment: AlignmentDirectional.topStart,
-            child: widget.child,
+            child: SizedBox(
+              width: double.infinity,
+              child: widget.child,
+            ),
           ),
         ),
       ),
       Expander(
         key: expanderKey,
-        headerShape: (open) => const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
         onStateChanged: (state) {
           // this is done because [onStateChanges] is called while the [Expander]
           // is updating. By using this, we schedule the rebuilt of this widget
@@ -92,12 +95,24 @@ class _CardHighlightState extends State<CardHighlight>
                 ),
               )
             : null,
-        header: const Text('Source code'),
-        content: SyntaxView(
-          code: widget.codeSnippet,
-          syntaxTheme: theme.brightness.isDark
-              ? SyntaxTheme.vscodeDark()
-              : SyntaxTheme.vscodeLight(),
+        header: widget.header ?? const Text('Source code'),
+        headerShape: (open) {
+          return const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.zero,
+            ),
+          );
+        },
+        content: ClipRRect(
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(6.0),
+          ),
+          child: SyntaxView(
+            code: widget.codeSnippet.replaceAll('  ', '    '),
+            syntaxTheme: theme.brightness.isDark
+                ? SyntaxTheme.vscodeDark()
+                : SyntaxTheme.vscodeLight(),
+          ),
         ),
       ),
     ]);

@@ -34,6 +34,12 @@ class _ToggleSwitchPageState extends State<ToggleSwitchPage> with PageMixin {
         ),
         subtitle(content: const Text('A simple ToggleSwitch')),
         CardHighlight(
+          codeSnippet: '''bool checked = false;
+
+ToggleSwitch(
+  checked: checked,
+  onPressed: disabled ? null : (v) => setState(() => checked = v),
+)''',
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: ToggleSwitch(
@@ -43,17 +49,18 @@ class _ToggleSwitchPageState extends State<ToggleSwitchPage> with PageMixin {
               content: Text(firstValue ? 'On' : 'Off'),
             ),
           ),
-          codeSnippet: '''bool checked = false;
-
-ToggleSwitch(
-  checked: checked,
-  onPressed: disabled ? null : (v) => setState(() => checked = v),
-)''',
         ),
         subtitle(
           content: const Text('A ToggleSwitch with custom header and content'),
         ),
         CardHighlight(
+          codeSnippet: '''bool checked = false;
+
+ToggleSwitch(
+  checked: checked,
+  onPressed: disabled ? null : (v) => setState(() => checked = v),
+  content: Text(checked ? 'Working' : 'Do work'),
+)''',
           child: Row(children: [
             InfoLabel(
               label: 'Header',
@@ -66,17 +73,14 @@ ToggleSwitch(
             ),
             if (secondValue)
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: ProgressRing(),
+                padding: EdgeInsetsDirectional.only(start: 24.0),
+                child: SizedBox(
+                  height: 30.0,
+                  width: 30.0,
+                  child: ProgressRing(),
+                ),
               )
           ]),
-          codeSnippet: '''bool checked = false;
-
-ToggleSwitch(
-  checked: checked,
-  onPressed: disabled ? null : (v) => setState(() => checked = v),
-  content: Text(checked ? 'Working' : 'Do work'),
-)''',
         ),
       ],
     );

@@ -4,8 +4,8 @@ import 'package:fluent_ui/fluent_ui.dart';
 void showCopiedSnackbar(BuildContext context, String copiedText) {
   showSnackbar(
     context,
-    Snackbar(
-      content: RichText(
+    InfoBar(
+      title: RichText(
         text: TextSpan(
           text: 'Copied ',
           style: const TextStyle(color: Colors.white),
@@ -22,7 +22,6 @@ void showCopiedSnackbar(BuildContext context, String copiedText) {
           ],
         ),
       ),
-      extended: true,
     ),
   );
 }
@@ -98,7 +97,7 @@ class _IconsPageState extends State<IconsPage> {
             onPressed: () async {
               final copyText = 'FluentIcons.${e.key}';
               await FlutterClipboard.copy(copyText);
-              showCopiedSnackbar(context, copyText);
+              if (context.mounted) showCopiedSnackbar(context, copyText);
             },
             cursor: SystemMouseCursors.copy,
             builder: (context, states) {

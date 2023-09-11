@@ -31,14 +31,6 @@ class NavigationPaneItem with Diagnosticable {
 ///   * [PaneItemAction], the item used for execute an action on click
 ///   * [PaneItemExpander], which creates hierhical navigation
 class PaneItem extends NavigationPaneItem {
-  /// The key used for the body content
-  ///
-  /// See also:
-  ///
-  ///   * [body], which this is assigned to
-  ///   * [_NavigationBody], which assigns this to every pane body
-  GlobalKey bodyKey = GlobalKey(debugLabel: 'PaneItem bodyKey');
-
   /// Creates a pane item.
   PaneItem({
     super.key,
@@ -110,10 +102,10 @@ class PaneItem extends NavigationPaneItem {
 
   /// Whether this pane item is disabled.
   ///
-  /// A pane item can be disabled for many reasons, such as a page not being available
-  /// in the current moment.
+  /// A pane item can be disabled for many reasons, such as a page not being
+  /// available in the current moment.
   ///
-  /// If true, [onTap] is ignored.
+  /// If false, [onTap] is ignored.
   ///
   /// See also:
   ///
@@ -131,14 +123,15 @@ class PaneItem extends NavigationPaneItem {
     int? itemIndex,
     bool? autofocus,
   }) {
-    final maybeBody = InheritedNavigationView.maybeOf(context);
+    final maybeBody = _InheritedNavigationView.maybeOf(context);
     final mode = displayMode ??
         maybeBody?.displayMode ??
         maybeBody?.pane?.displayMode ??
         PaneDisplayMode.minimal;
     assert(mode != PaneDisplayMode.auto);
-
     assert(debugCheckHasFluentTheme(context));
+
+    final isTransitioning = maybeBody?.isTransitioning ?? false;
 
     final theme = NavigationPaneTheme.of(context);
     final titleText = title?.getProperty<String>() ?? '';
@@ -149,12 +142,13 @@ class PaneItem extends NavigationPaneItem {
     final isMinimal = mode == PaneDisplayMode.minimal;
     final isCompact = mode == PaneDisplayMode.compact;
 
-    final onItemTapped = (onPressed == null && onTap == null) || !enabled
-        ? null
-        : () {
-            onPressed?.call();
-            onTap?.call();
-          };
+    final onItemTapped =
+        (onPressed == null && onTap == null) || !enabled || isTransitioning
+            ? null
+            : () {
+                onPressed?.call();
+                onTap?.call();
+              };
 
     final button = HoverButton(
       autofocus: autofocus ?? this.autofocus,
@@ -236,6 +230,8 @@ class PaneItem extends NavigationPaneItem {
               );
             case PaneDisplayMode.minimal:
             case PaneDisplayMode.open:
+              final shouldShowTrailing = !isTransitioning;
+
               return ConstrainedBox(
                 key: itemKey,
                 constraints: const BoxConstraints(
@@ -250,16 +246,18 @@ class PaneItem extends NavigationPaneItem {
                     ),
                   ),
                   Expanded(child: textResult),
-                  if (infoBadge != null)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(end: 8.0),
-                      child: infoBadge!,
-                    ),
-                  if (trailing != null)
-                    IconTheme.merge(
-                      data: const IconThemeData(size: 16.0),
-                      child: trailing!,
-                    ),
+                  if (shouldShowTrailing) ...[
+                    if (infoBadge != null)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8.0),
+                        child: infoBadge!,
+                      ),
+                    if (trailing != null)
+                      IconTheme.merge(
+                        data: const IconThemeData(size: 16.0),
+                        child: trailing!,
+                      ),
+                  ],
                 ]),
               );
             case PaneDisplayMode.top:
@@ -365,7 +363,7 @@ class PaneItem extends NavigationPaneItem {
           return Stack(children: [
             button,
             Positioned.fill(
-              child: InheritedNavigationView.merge(
+              child: _InheritedNavigationView.merge(
                 currentItemIndex: index,
                 currentItemSelected: selected,
                 child: KeyedSubtree(
@@ -480,7 +478,7 @@ class PaneItemHeader extends NavigationPaneItem {
   Widget build(BuildContext context) {
     assert(debugCheckHasFluentTheme(context));
     final theme = NavigationPaneTheme.of(context);
-    final view = InheritedNavigationView.of(context);
+    final view = _InheritedNavigationView.of(context);
 
     return KeyedSubtree(
       key: key,
@@ -596,12 +594,17 @@ class PaneItemExpander extends PaneItem {
     super.tileColor,
     super.selectedTileColor,
     super.onTap,
+    this.initiallyExpanded = false,
   }) : assert(
           items.any((item) => item is PaneItemExpander) == false,
           'There can not be nested PaneItemExpanders',
         );
 
   final List<NavigationPaneItem> items;
+
+  /// Whether the item is initially expanded. Defaults to false
+  final bool initiallyExpanded;
+
   static const kDefaultTrailing = Icon(FluentIcons.chevron_down, size: 8.0);
 
   @override
@@ -615,7 +618,7 @@ class PaneItemExpander extends PaneItem {
     bool? autofocus,
     int? itemIndex,
   }) {
-    final maybeBody = InheritedNavigationView.maybeOf(context);
+    final maybeBody = _InheritedNavigationView.maybeOf(context);
     final mode = displayMode ??
         maybeBody?.displayMode ??
         maybeBody?.pane?.displayMode ??
@@ -632,6 +635,7 @@ class PaneItemExpander extends PaneItem {
         selected: selected,
         onPressed: onPressed,
         onItemPressed: onItemPressed,
+        initiallyExpanded: initiallyExpanded,
       ),
     );
   }
@@ -647,6 +651,7 @@ class _PaneItemExpander extends StatefulWidget {
     required this.selected,
     required this.onPressed,
     required this.onItemPressed,
+    required this.initiallyExpanded,
   });
 
   final PaneItem item;
@@ -656,6 +661,7 @@ class _PaneItemExpander extends StatefulWidget {
   final bool selected;
   final VoidCallback? onPressed;
   final ValueChanged<PaneItem>? onItemPressed;
+  final bool initiallyExpanded;
 
   static const leadingPadding = EdgeInsetsDirectional.only(start: 28.0);
 
@@ -666,9 +672,7 @@ class _PaneItemExpander extends StatefulWidget {
 class __PaneItemExpanderState extends State<_PaneItemExpander>
     with SingleTickerProviderStateMixin {
   final flyoutController = FlyoutController();
-  bool get useFlyout {
-    return widget.displayMode != PaneDisplayMode.open;
-  }
+  bool get useFlyout => widget.displayMode != PaneDisplayMode.open;
 
   late bool _open;
   late final AnimationController controller = AnimationController(
@@ -683,7 +687,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
           context,
           identifier: 'paneItemExpanderOpen$index',
         ) as bool? ??
-        false;
+        widget.initiallyExpanded;
 
     if (_open) {
       controller.value = 1;
@@ -705,7 +709,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
   }
 
   int get index {
-    final body = InheritedNavigationView.of(context);
+    final body = _InheritedNavigationView.of(context);
 
     return body.pane?.effectiveIndexOf(widget.item) ?? 0;
   }
@@ -719,8 +723,8 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
       identifier: 'paneItemExpanderOpen$index',
     );
     if (_open) {
-      if (useFlyout && doFlyout) {
-        final body = InheritedNavigationView.of(context);
+      if (useFlyout && doFlyout && flyoutController.isAttached) {
+        final body = _InheritedNavigationView.of(context);
         final displayMode = body.displayMode;
         final navigationTheme = NavigationPaneTheme.of(context);
 
@@ -737,6 +741,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
                     item: item,
                     onPressed: () {
                       widget.onItemPressed?.call(item);
+                      item.onTap?.call();
                       Navigator.pop(context);
                     },
                     isSelected: body.pane!.isSelected(item),
@@ -784,7 +789,7 @@ class __PaneItemExpanderState extends State<_PaneItemExpander>
   Widget build(BuildContext context) {
     assert(debugCheckHasFluentTheme(context));
     final theme = FluentTheme.of(context);
-    final body = InheritedNavigationView.of(context);
+    final body = _InheritedNavigationView.of(context);
 
     _open = PageStorage.of(context).readState(
           context,
@@ -915,6 +920,7 @@ class _PaneItemExpanderMenuItem extends MenuFlyoutItemBase {
 
   @override
   Widget build(BuildContext context) {
+    assert(debugCheckHasFluentTheme(context));
     final theme = FluentTheme.of(context);
     final size = Flyout.of(context).size;
     return Container(
@@ -959,7 +965,8 @@ class _PaneItemExpanderMenuItem extends MenuFlyoutItemBase {
   }
 }
 
-base class _PaneItemExpanderItem extends LinkedListEntry<_PaneItemExpanderItem> {
+base class _PaneItemExpanderItem
+    extends LinkedListEntry<_PaneItemExpanderItem> {
   final PaneItem parent;
   final NavigationPaneItem expanderItem;
   final List<NavigationPaneItem> siblings;
@@ -974,22 +981,26 @@ base class _PaneItemExpanderItem extends LinkedListEntry<_PaneItemExpanderItem> 
 
 extension _ItemsExtension on List<NavigationPaneItem> {
   /// Get the all the item offets in this list
-  List<Offset> _getPaneItemsOffsets(
+  Iterable<Offset> _getPaneItemsOffsets(
     GlobalKey<State<StatefulWidget>> paneKey,
   ) {
     return map((e) {
       // Gets the item global position
       final itemContext = e.itemKey.currentContext;
-      if (itemContext == null) return Offset.zero;
+      if (itemContext == null || !itemContext.mounted) return Offset.zero;
       final box = itemContext.findRenderObject()! as RenderBox;
       final globalPosition = box.localToGlobal(Offset.zero);
       // And then convert it to the local position
       final paneContext = paneKey.currentContext;
-      if (paneContext == null) return Offset.zero;
+      if (paneContext == null || !paneContext.mounted) return Offset.zero;
       final paneBox = paneKey.currentContext!.findRenderObject() as RenderBox;
       final position = paneBox.globalToLocal(globalPosition);
       return position;
-    }).toList();
+    })
+        // Calling .toList here ensures that all the pane items positions are
+        // calculated. Without it, a lazy Iterable would be returned resulting
+        // in RenderObject bugs due to the widget not being in the tree
+        .toList();
   }
 }
 
